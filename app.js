@@ -309,7 +309,7 @@ function escapeAttr(str) {
 const modalOverlay = document.getElementById("modalOverlay");
 const modalCard = document.getElementById("modalCard");
 function showModal(html) { modalCard.innerHTML = html; modalOverlay.style.display = "flex"; }
-function hideModal() { modalOverlay.style.display = "none"; modalCard.innerHTML = ""; }
+function hideModal() { modalOverlay.style.display = "none"; modalCard.innerHTML = ""; modalCard.style.maxWidth = ""; }
 modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) hideModal(); });
 
 /* ---------------- tabs ---------------- */
@@ -1300,6 +1300,69 @@ function renderCalendar() {
       block.addEventListener("dblclick", () => isLog ? showLogDetail(ev.recordId) : showEventDetail(ev));
     });
     calDays.appendChild(col);
+  });
+}
+
+/* ================= SETTINGS: Claude API key ================= */
+// The key is stored only in this browser's local database (the `prefs` table), next
+// to your other data. It is never part of the JSON/CSV exports and is never sent
+// anywhere except directly to Anthropic when an AI feature is used.
+const API_KEY_PREF = "anthropicApiKey";
+
+function getApiKey() { return dbGetPref(API_KEY_PREF, ""); }
+function setApiKey(key) { dbSetPref(API_KEY_PREF, key); }
+function clearApiKey() { run("DELETE FROM prefs WHERE key = ?", [API_KEY_PREF]); }
+function maskKey(key) {
+  if (!key) return "";
+  return key.length <= 12 ? "••••" : `${key.slice(0, 7)}••••${key.slice(-4)}`;
+}
+
+document.getElementById("settingsBtn").addEventListener("click", showSettingsModal);
+
+function showSettingsModal() {
+  const current = getApiKey();
+  const statusHtml = current
+    ? `<span style="color:#2e7d32; font-weight:700;">已设置</span>　<code>${escapeHtml(maskKey(current))}</code>`
+    : `<span style="color:var(--muted); font-weight:700;">未设置</span>`;
+
+  modalCard.style.maxWidth = "460px";
+  showModal(`
+    <h3>⚙️ 设置</h3>
+    <div class="modal-detail-row"><span class="label">Claude API Key（用于 AI 识别课表）</span>${statusHtml}</div>
+    <input type="password" id="modalApiKeyInput" placeholder="粘贴你的 key（以 sk-ant- 开头）" autocomplete="off" spellcheck="false">
+    <p id="modalApiKeyError" style="color:var(--danger); display:none; margin-top:-6px;"></p>
+    <p style="margin-top:-4px;">
+      还没有 key？打开 <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>
+      注册登录，在 API Keys 页面创建一个，再粘贴到上面。
+    </p>
+    <p style="margin-top:-6px;">
+      这个 key 只保存在<b>这台电脑的这个浏览器</b>里，不会上传到任何服务器，也不会出现在导出的备份里。
+      使用 AI 识别时，费用由你自己的 Anthropic 账号承担。请不要在公共电脑上保存 key。
+      不想用 AI 的话可以不设置，手动添加课表和导入 JSON 照常可用。
+    </p>
+    <div class="modal-actions">
+      <button class="btn-outline small" id="modalSettingsCloseBtn">关闭</button>
+      ${current ? `<button class="btn-danger small" id="modalApiKeyClearBtn">清除 key</button>` : ""}
+      <button class="btn-primary small" id="modalApiKeySaveBtn">保存</button>
+    </div>
+  `);
+
+  document.getElementById("modalSettingsCloseBtn").addEventListener("click", hideModal);
+  if (current) {
+    document.getElementById("modalApiKeyClearBtn").addEventListener("click", () => {
+      clearApiKey();
+      showSettingsModal();
+    });
+  }
+  document.getElementById("modalApiKeySaveBtn").addEventListener("click", () => {
+    const val = document.getElementById("modalApiKeyInput").value.trim();
+    const errorEl = document.getElementById("modalApiKeyError");
+    const showError = (msg) => { errorEl.textContent = msg; errorEl.style.display = "block"; };
+    if (!val) { showError("请先粘贴 key"); return; }
+    if (!val.startsWith("sk-ant-")) { showError("这看起来不是 Anthropic 的 key（应该以 sk-ant- 开头），请检查是否复制完整"); return; }
+    if (/\s/.test(val)) { showError("key 中间不应该有空格或换行，请重新复制"); return; }
+    setApiKey(val);
+    showSettingsModal();
   });
 }
 
