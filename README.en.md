@@ -25,9 +25,11 @@ A study timer plus weekly timetable for students. Track how long you spend on ea
 
 ### 1. Download and open
 
-1. Click the green **Code** button at the top right of the repository page, then **Download ZIP**
+1. Open the [Releases page](../../releases/latest) of this repository and download **study_timer.zip** (the English version; 中文版是 `学习计时器.zip`)
 2. Unzip it to any folder
 3. Double-click `index.html` to open it in your browser (Chrome or Edge recommended)
+
+The two zips are the same app with the interface language fixed (no language drop-down). If you want the source code, or want to modify it, use the green **Code** button → **Download ZIP** instead; that is the full source with the English / 中文 switch.
 
 > The first time you open it you need to be online once, to load the database component (sql.js).
 
@@ -147,7 +149,7 @@ So far it has only been tested in desktop browsers.
 - [x] English and 中文 interface with a switch
 - [x] English README
 - [ ] Online demo page (GitHub Pages)
-- [ ] Separate Chinese-only and English-only download packages
+- [x] Separate Chinese-only and English-only download packages (Releases)
 - [ ] Phone experience
 
 ## License

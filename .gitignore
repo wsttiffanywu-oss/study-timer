@@ -16,3 +16,6 @@ study_records*.csv
 
 # optional local-only "原版" wording overlay (not published)
 i18n-orig.js
+
+# build output of scripts/build_packages.py
+dist/

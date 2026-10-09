@@ -1423,13 +1423,16 @@ async function init() {
 }
 
 // Language selector (switching reloads the page; the running timer is kept in the database).
+// (The single-language download packages ship without the selector.)
 const langSelect = document.getElementById("langSelect");
-I18N_AVAILABLE.forEach(l => {
-  const o = document.createElement("option");
-  o.value = l; o.textContent = I18N_LANG_NAMES[l]; o.selected = (l === I18N_LANG);
-  langSelect.appendChild(o);
-});
-langSelect.addEventListener("change", () => setLang(langSelect.value));
+if (langSelect) {
+  I18N_AVAILABLE.forEach(l => {
+    const o = document.createElement("option");
+    o.value = l; o.textContent = I18N_LANG_NAMES[l]; o.selected = (l === I18N_LANG);
+    langSelect.appendChild(o);
+  });
+  langSelect.addEventListener("change", () => setLang(langSelect.value));
+}
 
 window.addEventListener("beforeunload", (e) => {
   if (timerState && !window.skipUnloadWarning) { e.preventDefault(); e.returnValue = ""; }
