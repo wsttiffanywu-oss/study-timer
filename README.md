@@ -46,7 +46,7 @@ The **导入JSON备份** button accepts a file shaped like this:
 
 ## Roadmap
 
-- [ ] Settings page for your own Claude API key
+- [x] Settings page for your own Claude API key (stored only in your browser, never included in backups)
 - [ ] Import a schedule from a screenshot, a photo of a handwritten timetable, or pasted text, with a review step before anything is saved
 
 ## Status
