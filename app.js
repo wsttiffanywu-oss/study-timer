@@ -379,17 +379,17 @@ function updateDisplay() { timerDisplay.textContent = formatSeconds(currentElaps
 function setButtonsForState() {
   if (!timerState) {
     startBtn.disabled = false; pauseBtn.disabled = true; stopBtn.disabled = true;
-    pauseBtn.textContent = "⏸ 暂停"; statusText.textContent = "选择课程后点击开始";
+    pauseBtn.textContent = t("timer.pause"); statusText.textContent = t("timer.pickHint");
     courseSelect.disabled = false;
     return;
   }
   courseSelect.disabled = true; startBtn.disabled = true; stopBtn.disabled = false;
   if (timerState.running) {
-    pauseBtn.disabled = false; pauseBtn.textContent = "⏸ 暂停";
-    statusText.textContent = `正在计时：${timerState.course}`;
+    pauseBtn.disabled = false; pauseBtn.textContent = t("timer.pause");
+    statusText.textContent = t("timer.running", { course: timerState.course });
   } else {
-    pauseBtn.disabled = false; pauseBtn.textContent = "▶ 继续";
-    statusText.textContent = `已暂停：${timerState.course}`;
+    pauseBtn.disabled = false; pauseBtn.textContent = t("timer.resume");
+    statusText.textContent = t("timer.paused", { course: timerState.course });
   }
 }
 
@@ -480,19 +480,19 @@ function addCourseFromInput() {
 document.getElementById("manageCourseBtn").addEventListener("click", showCourseManageModal);
 function showCourseManageModal() {
   const courses = dbGetCourses();
-  let html = `<h3>管理课程/事项</h3><p>删除只是把它从下拉列表里移除，不会影响已经保存的学习记录和课表事项。</p>`;
+  let html = `<h3>${t("mc.title")}</h3><p>${t("mc.help")}</p>`;
   if (courses.length === 0) {
-    html += `<div class="empty" style="padding:0 0 8px;">还没有课程/事项</div>`;
+    html += `<div class="empty" style="padding:0 0 8px;">${t("mc.none")}</div>`;
   } else {
     courses.forEach(c => {
       const isRunning = timerState && timerState.course === c;
       html += `<div class="modal-detail-row" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        <span>${escapeHtml(c)}${isRunning ? "（计时中，不能删）" : ""}</span>
-        <button class="btn-danger small course-del-btn" data-course="${escapeAttr(c)}" ${isRunning ? "disabled" : ""}>删除</button>
+        <span>${escapeHtml(c)}${isRunning ? t("mc.running") : ""}</span>
+        <button class="btn-danger small course-del-btn" data-course="${escapeAttr(c)}" ${isRunning ? "disabled" : ""}>${t("common.delete")}</button>
       </div>`;
     });
   }
-  html += `<div class="modal-actions"><button class="btn-outline small" id="modalCloseBtn">关闭</button></div>`;
+  html += `<div class="modal-actions"><button class="btn-outline small" id="modalCloseBtn">${t("common.close")}</button></div>`;
   modalCard.style.maxWidth = "420px";
   showModal(html);
   document.getElementById("modalCloseBtn").addEventListener("click", () => { modalCard.style.maxWidth = ""; hideModal(); });
@@ -511,7 +511,7 @@ clearFilterBtn.addEventListener("click", () => { filterDate.value = ""; renderRe
 exportBtn.addEventListener("click", () => {
   const records = dbGetRecords();
   if (records.length === 0) return;
-  let csv = "日期,开始时间,结束时间,课程,时长(秒),时长(时分秒),备注\n";
+  let csv = t("csv.header") + "\n";
   records.forEach(r => {
     const note = (r.note || "").replace(/"/g, '""');
     csv += `${r.date},${formatClock(r.startTime)},${formatClock(r.endTime)},${r.course},${r.seconds},${formatSeconds(r.seconds)},"${note}"\n`;
@@ -530,41 +530,41 @@ function showTrashModal() {
   const deletedRecords = dbGetDeletedRecords();
   const deletedEvents = dbGetDeletedEvents();
 
-  let html = `<h3>🗑 最近删除</h3><p>10天内删除的都在这里，可以恢复；超过10天会自动清掉。</p>`;
+  let html = `<h3>${t("trash.title")}</h3><p>${t("trash.help")}</p>`;
 
-  html += `<div style="font-weight:700; font-size:13px; margin:10px 0 6px;">学习记录（${deletedRecords.length}）</div>`;
+  html += `<div style="font-weight:700; font-size:13px; margin:10px 0 6px;">${t("trash.records", { n: deletedRecords.length })}</div>`;
   if (deletedRecords.length === 0) {
-    html += `<div class="empty" style="padding:0 0 8px;">没有</div>`;
+    html += `<div class="empty" style="padding:0 0 8px;">${t("trash.none")}</div>`;
   } else {
     deletedRecords.forEach(r => {
       const clockRange = (r.startTime && r.endTime) ? `${formatClock(r.startTime)}–${formatClock(r.endTime)}` : "";
       html += `<div class="modal-detail-row" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
         <span>${r.date} ${clockRange}　${escapeHtml(r.course)}　${formatSeconds(r.seconds)}</span>
         <span style="white-space:nowrap;">
-          <button class="btn-outline small" onclick="restoreRecordFromTrash(${r.id})">恢复</button>
-          <button class="btn-danger small" onclick="permanentlyDeleteRecordFromTrash(${r.id})">彻底删除</button>
+          <button class="btn-outline small" onclick="restoreRecordFromTrash(${r.id})">${t("trash.restore")}</button>
+          <button class="btn-danger small" onclick="permanentlyDeleteRecordFromTrash(${r.id})">${t("trash.purge")}</button>
         </span>
       </div>`;
     });
   }
 
-  html += `<div style="font-weight:700; font-size:13px; margin:14px 0 6px;">课表事项（${deletedEvents.length}）</div>`;
+  html += `<div style="font-weight:700; font-size:13px; margin:14px 0 6px;">${t("trash.events", { n: deletedEvents.length })}</div>`;
   if (deletedEvents.length === 0) {
-    html += `<div class="empty" style="padding:0 0 8px;">没有</div>`;
+    html += `<div class="empty" style="padding:0 0 8px;">${t("trash.none")}</div>`;
   } else {
     deletedEvents.forEach(ev => {
       const whenLabel = ev.type === "recurring" ? DAY_NAMES[ev.day] : ev.date;
       html += `<div class="modal-detail-row" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
         <span>${whenLabel} ${ev.start}-${ev.end}　${escapeHtml(ev.course)}</span>
         <span style="white-space:nowrap;">
-          <button class="btn-outline small" onclick="restoreEventFromTrash('${ev.id}')">恢复</button>
-          <button class="btn-danger small" onclick="permanentlyDeleteEventFromTrash('${ev.id}')">彻底删除</button>
+          <button class="btn-outline small" onclick="restoreEventFromTrash('${ev.id}')">${t("trash.restore")}</button>
+          <button class="btn-danger small" onclick="permanentlyDeleteEventFromTrash('${ev.id}')">${t("trash.purge")}</button>
         </span>
       </div>`;
     });
   }
 
-  html += `<div class="modal-actions"><button class="btn-outline small" id="modalCloseBtn">关闭</button></div>`;
+  html += `<div class="modal-actions"><button class="btn-outline small" id="modalCloseBtn">${t("common.close")}</button></div>`;
   modalCard.style.maxWidth = "480px";
   showModal(html);
   document.getElementById("modalCloseBtn").addEventListener("click", () => {
@@ -581,12 +581,12 @@ function editRecordNote(id) {
   const r = dbGetRecords().find(x => x.id === id);
   if (!r) return;
   showModal(`
-    <h3>编辑备注</h3>
-    <p>课程：${escapeHtml(r.course)}　${r.date}</p>
+    <h3>${t("note.title")}</h3>
+    <p>${t("note.info", { course: escapeHtml(r.course), date: r.date })}</p>
     <textarea id="modalNoteInput" style="width:100%; min-height:80px;">${escapeHtml(r.note || "")}</textarea>
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalCancelBtn">取消</button>
-      <button class="btn-primary small" id="modalSaveBtn">保存</button>
+      <button class="btn-outline small" id="modalCancelBtn">${t("common.cancel")}</button>
+      <button class="btn-primary small" id="modalSaveBtn">${t("common.save")}</button>
     </div>
   `);
   document.getElementById("modalCancelBtn").addEventListener("click", hideModal);
@@ -607,15 +607,15 @@ function editRecordCourse(id) {
     `<option value="${escapeAttr(c)}" ${c === r.course ? "selected" : ""}>${escapeHtml(c)}</option>`
   ).join("");
   showModal(`
-    <h3>修改课程/事项</h3>
-    <p>当前：${escapeHtml(r.course)}　${r.date}　${formatSeconds(r.seconds)}</p>
-    <label class="form-label">选择已有课程/事项</label>
+    <h3>${t("ec.title")}</h3>
+    <p>${t("ec.current", { course: escapeHtml(r.course), date: r.date, dur: formatSeconds(r.seconds) })}</p>
+    <label class="form-label">${t("ec.pick")}</label>
     <select id="modalCourseSelect">${options}</select>
-    <label class="form-label" style="margin-top:10px;">或输入新的名称（填了就用这个，不用选的）</label>
-    <input type="text" id="modalCourseNew" placeholder="新建课程/事项名称">
+    <label class="form-label" style="margin-top:10px;">${t("ec.new")}</label>
+    <input type="text" id="modalCourseNew" placeholder="${escapeAttr(t("ec.newPh"))}">
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalCancelBtn">取消</button>
-      <button class="btn-primary small" id="modalSaveBtn">保存</button>
+      <button class="btn-outline small" id="modalCancelBtn">${t("common.cancel")}</button>
+      <button class="btn-primary small" id="modalSaveBtn">${t("common.save")}</button>
     </div>
   `);
   document.getElementById("modalCancelBtn").addEventListener("click", hideModal);
@@ -639,20 +639,20 @@ function editRecordTime(id) {
   const currentStart = r.startTime ? formatClock(r.startTime) : "";
   const currentEnd = r.endTime ? formatClock(r.endTime) : "";
   showModal(`
-    <h3>编辑开始/结束时间</h3>
-    <p>课程：${escapeHtml(r.course)}　当前时长：${formatSeconds(r.seconds)}</p>
-    <label class="form-label">开始时间</label>
+    <h3>${t("et.title")}</h3>
+    <p>${t("et.info", { course: escapeHtml(r.course), dur: formatSeconds(r.seconds) })}</p>
+    <label class="form-label">${t("form.start")}</label>
     <input type="time" id="modalStartInput" value="${currentStart}">
-    <label class="form-label">结束时间</label>
+    <label class="form-label">${t("form.end")}</label>
     <input type="time" id="modalEndInput" value="${currentEnd}">
     <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin:10px 0;">
-      <input type="checkbox" id="modalOvernightInput"> 结束时间是第二天（跨过了午夜）
+      <input type="checkbox" id="modalOvernightInput"> ${t("et.overnight")}
     </label>
     <p id="modalTimeError" style="color:var(--danger); display:none; margin-top:-6px;"></p>
-    <p style="margin-top:-6px;">保存后时长会按新的开始/结束时间重新计算。</p>
+    <p style="margin-top:-6px;">${t("et.help")}</p>
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalCancelBtn">取消</button>
-      <button class="btn-primary small" id="modalSaveBtn">保存</button>
+      <button class="btn-outline small" id="modalCancelBtn">${t("common.cancel")}</button>
+      <button class="btn-primary small" id="modalSaveBtn">${t("common.save")}</button>
     </div>
   `);
   document.getElementById("modalCancelBtn").addEventListener("click", hideModal);
@@ -662,7 +662,7 @@ function editRecordTime(id) {
     const overnight = document.getElementById("modalOvernightInput").checked;
     const errorEl = document.getElementById("modalTimeError");
     const showError = (msg) => { errorEl.textContent = msg; errorEl.style.display = "block"; };
-    if (!startVal || !endVal) { showError("请填写开始和结束时间"); return; }
+    if (!startVal || !endVal) { showError(t("err.times")); return; }
 
     const [sh, sm] = startVal.split(":").map(Number);
     const [eh, em] = endVal.split(":").map(Number);
@@ -673,12 +673,12 @@ function editRecordTime(id) {
     if (overnight) endDate.setDate(endDate.getDate() + 1);
 
     if (endDate <= startDate) {
-      showError(overnight ? "结束时间仍然不晚于开始时间，请检查填写" : "结束时间比开始时间早——如果这段学习跨过了午夜，请勾选上面的选项");
+      showError(overnight ? t("et.errStillNotLater") : t("et.errEarlier"));
       return;
     }
     const now = new Date();
     if (startDate > now || endDate > now) {
-      showError("开始/结束时间不能晚于当前时间");
+      showError(t("et.errFuture"));
       return;
     }
 
@@ -697,7 +697,7 @@ function renderRecords() {
   if (filter) filtered = allRecords.filter(r => r.date.includes(filter));
 
   if (filtered.length === 0) {
-    recordsContainer.innerHTML = `<div class="empty">暂无记录${filter ? "（当前筛选条件下）" : "，开始计时后会自动保存在这里"}</div>`;
+    recordsContainer.innerHTML = `<div class="empty">${filter ? t("rec.emptyFiltered") : t("rec.empty")}</div>`;
     return;
   }
   const byDate = {};
@@ -710,16 +710,16 @@ function renderRecords() {
     const dayTotal = items.reduce((sum, r) => sum + r.seconds, 0);
     html += `<table style="margin-bottom:14px;">
       <thead><tr>
-        <th>${date} <span class="day-total">(共 ${formatSeconds(dayTotal)})</span></th>
-        <th>课程</th><th>时长</th><th></th>
+        <th>${date} <span class="day-total">${t("rec.dayTotal", { total: formatSeconds(dayTotal) })}</span></th>
+        <th>${t("rec.colCourse")}</th><th>${t("rec.colDuration")}</th><th></th>
       </tr></thead><tbody>`;
     items.forEach(r => {
       const clockRange = (r.startTime && r.endTime) ? `${formatClock(r.startTime)}–${formatClock(r.endTime)}` : "—";
       html += `<tr>
-        <td><span class="delete-x" onclick="editRecordTime(${r.id})" title="点击修改开始/结束时间">${clockRange} ✎</span></td>
-        <td><span class="delete-x" onclick="editRecordCourse(${r.id})" title="点击修改课程/事项">${escapeHtml(r.course)} ✎</span>${r.note ? `<div class="note-text">${escapeHtml(r.note)}</div>` : ""}<div><span class="delete-x" onclick="editRecordNote(${r.id})">${r.note ? "编辑备注" : "+ 添加备注"}</span></div></td>
+        <td><span class="delete-x" onclick="editRecordTime(${r.id})" title="${escapeAttr(t("rec.editTimeTitle"))}">${clockRange} ✎</span></td>
+        <td><span class="delete-x" onclick="editRecordCourse(${r.id})" title="${escapeAttr(t("rec.editCourseTitle"))}">${escapeHtml(r.course)} ✎</span>${r.note ? `<div class="note-text">${escapeHtml(r.note)}</div>` : ""}<div><span class="delete-x" onclick="editRecordNote(${r.id})">${r.note ? t("rec.editNote") : t("rec.addNote")}</span></div></td>
         <td>${formatSeconds(r.seconds)}</td>
-        <td><span class="delete-x" onclick="deleteRecord(${r.id})">删除</span></td>
+        <td><span class="delete-x" onclick="deleteRecord(${r.id})">${t("common.delete")}</span></td>
       </tr>`;
     });
     html += `</tbody></table>`;
@@ -753,7 +753,7 @@ const evEndInput = document.getElementById("evEndInput");
 const evLocInput = document.getElementById("evLocInput");
 const addEventBtn = document.getElementById("addEventBtn");
 
-const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+const DAY_NAMES = t("days");
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 const NORMAL_ZONE_START = 8;
@@ -877,7 +877,7 @@ addEventBtn.addEventListener("click", () => {
   const kind = evKindSelect.value;
   const start = evStartInput.value, end = evEndInput.value;
   if (!start || !end) {
-    showModal(`<h3>缺少时间</h3><p>请填写开始和结束时间。</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>`);
+    showModal(`<h3>${t("add.noTimeTitle")}</h3><p>${t("add.noTimeMsg")}</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">${t("common.ok")}</button></div>`);
     document.getElementById("modalOkBtn").addEventListener("click", hideModal);
     return;
   }
@@ -888,7 +888,7 @@ addEventBtn.addEventListener("click", () => {
     ev.day = parseInt(evDaySelect.value, 10);
     const sd = evStartDateInput.value, ed = evEndDateInput.value;
     if (sd && ed && ed < sd) {
-      showModal(`<h3>有效期不对</h3><p>结束日期不能早于开始日期。</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>`);
+      showModal(`<h3>${t("add.badRangeTitle")}</h3><p>${t("add.badRangeMsg")}</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">${t("common.ok")}</button></div>`);
       document.getElementById("modalOkBtn").addEventListener("click", hideModal);
       return;
     }
@@ -896,7 +896,7 @@ addEventBtn.addEventListener("click", () => {
     if (ed) ev.endDate = ed;
   } else {
     if (!evDateInput.value) {
-      showModal(`<h3>缺少日期</h3><p>请选择日期。</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>`);
+      showModal(`<h3>${t("add.noDateTitle")}</h3><p>${t("add.noDateMsg")}</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">${t("common.ok")}</button></div>`);
       document.getElementById("modalOkBtn").addEventListener("click", hideModal);
       return;
     }
@@ -995,7 +995,7 @@ function importBackupFile(file) {
     try {
       data = JSON.parse(reader.result);
     } catch (err) {
-      showModal(`<h3>导入失败</h3><p>不是合法的JSON文件：${escapeHtml(err.message)}</p><div class="modal-actions"><button class="btn-outline small" id="modalOkBtn">关闭</button></div>`);
+      showModal(`<h3>${t("imp.failTitle")}</h3><p>${t("imp.failMsg", { err: escapeHtml(err.message) })}</p><div class="modal-actions"><button class="btn-outline small" id="modalOkBtn">${t("common.close")}</button></div>`);
       document.getElementById("modalOkBtn").addEventListener("click", hideModal);
       return;
     }
@@ -1013,10 +1013,10 @@ function importBackupFile(file) {
 
     renderCourseOptions(); renderRecords(); renderCalendar();
     showModal(`
-      <h3>导入完成</h3>
-      <p>课程 ${addedCourses} 条，课表事项新增 ${addedEvents} 条${skippedEvents ? `（跳过 ${skippedEvents} 条已存在的）` : ""}。<br>
-      学习记录：新增 ${addedRecords} 条，合并 ${mergedRecords} 条（同课程同日期时间段有重叠，取并集），跳过完全重复 ${skippedRecords} 条。</p>
-      <div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>
+      <h3>${t("imp.doneTitle")}</h3>
+      <p>${t("imp.line1", { c: addedCourses, e: addedEvents, skip: skippedEvents ? t("imp.skipped", { n: skippedEvents }) : "" })}<br>
+      ${t("imp.line2", { a: addedRecords, m: mergedRecords, s: skippedRecords })}</p>
+      <div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">${t("common.ok")}</button></div>
     `);
     document.getElementById("modalOkBtn").addEventListener("click", hideModal);
   };
@@ -1033,19 +1033,19 @@ document.getElementById("importBackupInput").addEventListener("change", (e) => {
 
 function showEventDetail(ev) {
   const kind = ev.kind || "class";
-  const kindLabel = kind === "officehour" ? "Office Hour" : kind === "activity" ? "其他活动（可选参加）" : kind === "exam" ? "考试 / 测验" : "课程 / 固定安排";
+  const kindLabel = t("kind." + (["officehour", "activity", "exam"].includes(kind) ? kind : "class"));
   const rangeLabel = ev.type === "recurring" && (ev.startDate || ev.endDate)
-    ? `，有效期 ${ev.startDate || "…"} ~ ${ev.endDate || "…"}` : "";
-  const whenLabel = ev.type === "recurring" ? `${DAY_NAMES[ev.day]}　每周重复${rangeLabel}` : `${ev.date}　仅这一周`;
+    ? t("ev.range", { from: ev.startDate || "…", to: ev.endDate || "…" }) : "";
+  const whenLabel = ev.type === "recurring" ? t("ev.whenRecurring", { day: DAY_NAMES[ev.day], range: rangeLabel }) : t("ev.whenOneoff", { date: ev.date });
   showModal(`
     <h3>${escapeHtml(ev.course)}</h3>
-    <div class="modal-detail-row"><span class="label">类型</span>${kindLabel}</div>
-    <div class="modal-detail-row"><span class="label">时间</span>${ev.start}–${ev.end}（${whenLabel}）</div>
-    ${ev.loc ? `<div class="modal-detail-row"><span class="label">地点/备注</span>${escapeHtml(ev.loc)}</div>` : ""}
+    <div class="modal-detail-row"><span class="label">${t("ev.type")}</span>${kindLabel}</div>
+    <div class="modal-detail-row"><span class="label">${t("ev.time")}</span>${t("ev.timeVal", { time: `${ev.start}–${ev.end}`, when: whenLabel })}</div>
+    ${ev.loc ? `<div class="modal-detail-row"><span class="label">${t("ev.loc")}</span>${escapeHtml(ev.loc)}</div>` : ""}
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalCloseBtn">关闭</button>
-      <button class="btn-outline small" id="modalEditEvBtn">编辑</button>
-      <button class="btn-danger small" id="modalDeleteEvBtn">删除此事项</button>
+      <button class="btn-outline small" id="modalCloseBtn">${t("common.close")}</button>
+      <button class="btn-outline small" id="modalEditEvBtn">${t("common.edit")}</button>
+      <button class="btn-danger small" id="modalDeleteEvBtn">${t("ev.deleteBtn")}</button>
     </div>
   `);
   document.getElementById("modalCloseBtn").addEventListener("click", hideModal);
@@ -1058,49 +1058,46 @@ function showEventDetail(ev) {
 
 function editEventModal(ev) {
   const kind = ev.kind || "class";
-  const kindOptions = [
-    ["class", "课程 / 固定安排"], ["officehour", "Office Hour"],
-    ["activity", "其他活动（可选参加）"], ["exam", "考试 / 测验"]
-  ].map(([v, label]) => `<option value="${v}" ${kind === v ? "selected" : ""}>${label}</option>`).join("");
+  const kindOptions = ["class", "officehour", "activity", "exam"].map(v => [v, t("kind." + v)]).map(([v, label]) => `<option value="${v}" ${kind === v ? "selected" : ""}>${label}</option>`).join("");
   const dayOptions = DAY_NAMES.map((n, i) => `<option value="${i}" ${ev.day === i ? "selected" : ""}>${n}</option>`).join("");
   const isRecurring = ev.type === "recurring";
 
   showModal(`
-    <h3>编辑事项</h3>
-    <label class="form-label">课程/事项</label>
+    <h3>${t("ee.title")}</h3>
+    <label class="form-label">${t("form.course")}</label>
     <input type="text" id="modalEvCourse" value="${escapeHtml(ev.course)}">
-    <label class="form-label">类型</label>
+    <label class="form-label">${t("form.type")}</label>
     <select id="modalEvKind">${kindOptions}</select>
     <label style="display:flex; gap:14px; font-size:13px; margin:10px 0;">
-      <label><input type="radio" name="modalEvType" value="recurring" ${isRecurring ? "checked" : ""}> 每周重复</label>
-      <label><input type="radio" name="modalEvType" value="oneoff" ${!isRecurring ? "checked" : ""}> 仅这一周</label>
+      <label><input type="radio" name="modalEvType" value="recurring" ${isRecurring ? "checked" : ""}> ${t("ee.recurring")}</label>
+      <label><input type="radio" name="modalEvType" value="oneoff" ${!isRecurring ? "checked" : ""}> ${t("ee.oneoff")}</label>
     </label>
     <div id="modalEvDayWrap" style="display:${isRecurring ? "block" : "none"};">
-      <label class="form-label">星期</label>
+      <label class="form-label">${t("form.day")}</label>
       <select id="modalEvDay">${dayOptions}</select>
     </div>
     <div id="modalEvDateWrap" style="display:${isRecurring ? "none" : "block"};">
-      <label class="form-label">具体日期</label>
+      <label class="form-label">${t("form.date")}</label>
       <input type="date" id="modalEvDate" value="${ev.date || ""}">
     </div>
     <div id="modalEvRangeWrap" style="display:${isRecurring ? "block" : "none"};">
-      <label class="form-label">有效期（可选，留空 = 一直每周重复）</label>
+      <label class="form-label">${t("ee.range")}</label>
       <div class="row" style="gap:8px; flex-wrap:nowrap; margin-bottom:10px;">
         <input type="date" id="modalEvStartDate" value="${ev.startDate || ""}" style="flex:1; min-width:0;">
         <span style="color:var(--muted);">~</span>
         <input type="date" id="modalEvEndDate" value="${ev.endDate || ""}" style="flex:1; min-width:0;">
       </div>
     </div>
-    <label class="form-label">开始时间</label>
+    <label class="form-label">${t("form.start")}</label>
     <input type="time" id="modalEvStart" value="${ev.start}">
-    <label class="form-label">结束时间</label>
+    <label class="form-label">${t("form.end")}</label>
     <input type="time" id="modalEvEnd" value="${ev.end}">
-    <label class="form-label">地点/备注</label>
+    <label class="form-label">${t("ev.loc")}</label>
     <input type="text" id="modalEvLoc" value="${escapeHtml(ev.loc || "")}">
     <p id="modalEvError" style="color:var(--danger); display:none;"></p>
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalEvCancelBtn">取消</button>
-      <button class="btn-primary small" id="modalEvSaveBtn">保存</button>
+      <button class="btn-outline small" id="modalEvCancelBtn">${t("common.cancel")}</button>
+      <button class="btn-primary small" id="modalEvSaveBtn">${t("common.save")}</button>
     </div>
   `);
   document.querySelectorAll('input[name="modalEvType"]').forEach(r => {
@@ -1121,19 +1118,19 @@ function editEventModal(ev) {
     const loc = document.getElementById("modalEvLoc").value.trim();
     const errorEl = document.getElementById("modalEvError");
     const showError = (msg) => { errorEl.textContent = msg; errorEl.style.display = "block"; };
-    if (!course) { showError("请填写课程/事项名称"); return; }
-    if (!start || !end) { showError("请填写开始和结束时间"); return; }
+    if (!course) { showError(t("ee.errName")); return; }
+    if (!start || !end) { showError(t("err.times")); return; }
 
     const updated = { course, kind: newKind, type, start, end, loc };
     if (type === "recurring") {
       updated.day = parseInt(document.getElementById("modalEvDay").value, 10);
       const sd = document.getElementById("modalEvStartDate").value, ed = document.getElementById("modalEvEndDate").value;
-      if (sd && ed && ed < sd) { showError("有效期的结束日期不能早于开始日期"); return; }
+      if (sd && ed && ed < sd) { showError(t("err.range")); return; }
       if (sd) updated.startDate = sd;
       if (ed) updated.endDate = ed;
     } else {
       const dateVal = document.getElementById("modalEvDate").value;
-      if (!dateVal) { showError("请选择日期"); return; }
+      if (!dateVal) { showError(t("err.date")); return; }
       updated.date = dateVal;
       updated.day = (new Date(dateVal + "T00:00:00").getDay() + 6) % 7;
     }
@@ -1148,26 +1145,26 @@ function editEventModal(ev) {
 function showLogDetail(recordId) {
   const r = dbGetRecords().find(x => x.id === recordId);
   if (!r) return;
-  const clockRange = (r.startTime && r.endTime) ? `${formatClock(r.startTime)}–${formatClock(r.endTime)}` : "未记录具体时间";
+  const clockRange = (r.startTime && r.endTime) ? `${formatClock(r.startTime)}–${formatClock(r.endTime)}` : t("log.noClock");
   const breaks = r.breaks || [];
   let breaksHtml = "";
   if (breaks.length) {
     const totalBreakSec = breaks.reduce((sum, b) => sum + Math.max(0, (new Date(b.end || b.start) - new Date(b.start)) / 1000), 0);
-    const rows = breaks.map(b => `${formatClock(b.start)}–${b.end ? formatClock(b.end) : "…"}`).join("，");
-    breaksHtml = `<div class="modal-detail-row"><span class="label">中间暂停</span>${rows}（共 ${formatSeconds(Math.round(totalBreakSec))}，日历方块上用斜纹标出）</div>`;
+    const rows = breaks.map(b => `${formatClock(b.start)}–${b.end ? formatClock(b.end) : "…"}`).join(t("log.sep"));
+    breaksHtml = `<div class="modal-detail-row"><span class="label">${t("log.breaks")}</span>${t("log.breaksVal", { rows, total: formatSeconds(Math.round(totalBreakSec)) })}</div>`;
   }
   showModal(`
-    <h3>${escapeHtml(r.course)}（已学习）</h3>
-    <div class="modal-detail-row"><span class="label">日期</span>${r.date}</div>
-    <div class="modal-detail-row"><span class="label">时间段${breaks.length ? "（含暂停）" : ""}</span>${clockRange}</div>
+    <h3>${t("log.title", { course: escapeHtml(r.course) })}</h3>
+    <div class="modal-detail-row"><span class="label">${t("log.date")}</span>${r.date}</div>
+    <div class="modal-detail-row"><span class="label">${breaks.length ? t("log.rangeBreaks") : t("log.range")}</span>${clockRange}</div>
     ${breaksHtml}
-    <div class="modal-detail-row"><span class="label">实际学习时长</span>${formatSeconds(r.seconds)}</div>
-    ${r.note ? `<div class="modal-detail-row"><span class="label">备注</span>${escapeHtml(r.note)}</div>` : ""}
+    <div class="modal-detail-row"><span class="label">${t("log.actual")}</span>${formatSeconds(r.seconds)}</div>
+    ${r.note ? `<div class="modal-detail-row"><span class="label">${t("log.note")}</span>${escapeHtml(r.note)}</div>` : ""}
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalCloseBtn">关闭</button>
-      <button class="btn-outline small" id="modalEditCourseBtn">编辑课程</button>
-      <button class="btn-outline small" id="modalEditNoteBtn">编辑备注</button>
-      <button class="btn-danger small" id="modalDeleteLogBtn">删除这条记录</button>
+      <button class="btn-outline small" id="modalCloseBtn">${t("common.close")}</button>
+      <button class="btn-outline small" id="modalEditCourseBtn">${t("log.editCourse")}</button>
+      <button class="btn-outline small" id="modalEditNoteBtn">${t("rec.editNote")}</button>
+      <button class="btn-danger small" id="modalDeleteLogBtn">${t("log.delete")}</button>
     </div>
   `);
   document.getElementById("modalCloseBtn").addEventListener("click", hideModal);
@@ -1225,7 +1222,7 @@ function renderCalendar() {
   const weekDates = [];
   for (let i = 0; i < 7; i++) { const d = new Date(monday); d.setDate(monday.getDate() + i); weekDates.push(d); }
   const sunday = weekDates[6];
-  weekLabel.textContent = `${fmtDate(monday)} ~ ${fmtDate(sunday)}` + (weekOffset === 0 ? "（本周）" : "");
+  weekLabel.textContent = `${fmtDate(monday)} ~ ${fmtDate(sunday)}` + (weekOffset === 0 ? t("cal.thisWeek") : "");
   const todayKey = fmtDate(new Date());
 
   let headerHtml = `<div></div>`;
@@ -1304,7 +1301,7 @@ function renderCalendar() {
       block.innerHTML = `
         ${isLog ? "" : `<span class="ev-del" onclick="deleteEvent('${ev.id}')">✕</span>`}
         <div class="ev-time">${ev.start}-${ev.end}</div>
-        <div class="ev-course">${escapeHtml(ev.course)}${kind === "officehour" ? " · OH" : kind === "activity" ? " · 活动" : kind === "exam" ? " · ⚠️考试" : isLog ? " · 已学" : ""}</div>
+        <div class="ev-course">${escapeHtml(ev.course)}${kind === "officehour" ? t("tag.oh") : kind === "activity" ? t("tag.activity") : kind === "exam" ? t("tag.exam") : isLog ? t("tag.log") : ""}</div>
         ${ev.loc ? `<div class="ev-loc">${escapeHtml(ev.loc)}</div>` : ""}
       `;
       // A paused (暂停) stretch inside this study block is kept as one continuous
@@ -1321,7 +1318,7 @@ function renderCalendar() {
           stripe.className = "log-break-stripe";
           stripe.style.top = topPct + "%";
           stripe.style.height = heightPct + "%";
-          stripe.title = "暂停";
+          stripe.title = t("stripe.title");
           block.appendChild(stripe);
         });
       }
@@ -1351,28 +1348,25 @@ document.getElementById("settingsBtn").addEventListener("click", showSettingsMod
 function showSettingsModal() {
   const current = getApiKey();
   const statusHtml = current
-    ? `<span style="color:#2e7d32; font-weight:700;">已设置</span>　<code>${escapeHtml(maskKey(current))}</code>`
-    : `<span style="color:var(--muted); font-weight:700;">未设置</span>`;
+    ? `<span style="color:#2e7d32; font-weight:700;">${t("set.on")}</span>　<code>${escapeHtml(maskKey(current))}</code>`
+    : `<span style="color:var(--muted); font-weight:700;">${t("set.off")}</span>`;
 
   modalCard.style.maxWidth = "460px";
   showModal(`
-    <h3>⚙️ 设置</h3>
-    <div class="modal-detail-row"><span class="label">Claude API Key（用于 AI 识别课表）</span>${statusHtml}</div>
-    <input type="password" id="modalApiKeyInput" placeholder="粘贴你的 key（以 sk-ant- 开头）" autocomplete="off" spellcheck="false">
+    <h3>${t("set.title")}</h3>
+    <div class="modal-detail-row"><span class="label">${t("set.keyLabel")}</span>${statusHtml}</div>
+    <input type="password" id="modalApiKeyInput" placeholder="${escapeAttr(t("set.keyPh"))}" autocomplete="off" spellcheck="false">
     <p id="modalApiKeyError" style="color:var(--danger); display:none; margin-top:-6px;"></p>
     <p style="margin-top:-4px;">
-      还没有 key？打开 <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>
-      注册登录，在 API Keys 页面创建一个，再粘贴到上面。
+      ${t("set.help1")}
     </p>
     <p style="margin-top:-6px;">
-      这个 key 只保存在<b>这台电脑的这个浏览器</b>里，不会出现在导出的备份里。
-      只有在你使用 AI 导入时，它才会随识别请求发给 Anthropic（不经过其他任何服务器），费用由你自己的 Anthropic 账号承担。请不要在公共电脑上保存 key。
-      不想用 AI 的话可以不设置，手动添加课表和导入 JSON 照常可用。
+      ${t("set.help2")}
     </p>
     <div class="modal-actions">
-      <button class="btn-outline small" id="modalSettingsCloseBtn">关闭</button>
-      ${current ? `<button class="btn-danger small" id="modalApiKeyClearBtn">清除 key</button>` : ""}
-      <button class="btn-primary small" id="modalApiKeySaveBtn">保存</button>
+      <button class="btn-outline small" id="modalSettingsCloseBtn">${t("common.close")}</button>
+      ${current ? `<button class="btn-danger small" id="modalApiKeyClearBtn">${t("set.clear")}</button>` : ""}
+      <button class="btn-primary small" id="modalApiKeySaveBtn">${t("common.save")}</button>
     </div>
   `);
 
@@ -1387,9 +1381,9 @@ function showSettingsModal() {
     const val = document.getElementById("modalApiKeyInput").value.trim();
     const errorEl = document.getElementById("modalApiKeyError");
     const showError = (msg) => { errorEl.textContent = msg; errorEl.style.display = "block"; };
-    if (!val) { showError("请先粘贴 key"); return; }
-    if (!val.startsWith("sk-ant-")) { showError("这看起来不是 Anthropic 的 key（应该以 sk-ant- 开头），请检查是否复制完整"); return; }
-    if (/\s/.test(val)) { showError("key 中间不应该有空格或换行，请重新复制"); return; }
+    if (!val) { showError(t("set.errEmpty")); return; }
+    if (!val.startsWith("sk-ant-")) { showError(t("set.errPrefix")); return; }
+    if (/\s/.test(val)) { showError(t("set.errSpace")); return; }
     setApiKey(val);
     showSettingsModal();
   });
@@ -1400,9 +1394,9 @@ async function init() {
   const statusEl = document.getElementById("dbStatus");
   try {
     await initDatabase();
-    statusEl.textContent = "数据保存在本地的 SQLite 数据库里（通过浏览器 IndexedDB 持久化），不会上传到服务器（只有使用 AI 导入时，所选图片/文字才会发给 Anthropic）。";
+    statusEl.textContent = t("db.ok");
   } catch (err) {
-    statusEl.textContent = "数据库初始化失败：" + err.message + "（请检查网络能否访问 cdn.jsdelivr.net 来加载 sql.js）";
+    statusEl.textContent = t("db.fail", { err: err.message });
     console.error(err);
     return;
   }
@@ -1428,8 +1422,17 @@ async function init() {
   if (timerState && timerState.running) startTicking();
 }
 
+// Language selector (switching reloads the page; the running timer is kept in the database).
+const langSelect = document.getElementById("langSelect");
+I18N_AVAILABLE.forEach(l => {
+  const o = document.createElement("option");
+  o.value = l; o.textContent = I18N_LANG_NAMES[l]; o.selected = (l === I18N_LANG);
+  langSelect.appendChild(o);
+});
+langSelect.addEventListener("change", () => setLang(langSelect.value));
+
 window.addEventListener("beforeunload", (e) => {
-  if (timerState) { e.preventDefault(); e.returnValue = ""; }
+  if (timerState && !window.skipUnloadWarning) { e.preventDefault(); e.returnValue = ""; }
 });
 
 init();

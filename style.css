@@ -183,3 +183,6 @@ th { color: var(--muted); font-weight: 600; }
 .ai-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .ai-item-error { color: var(--danger); font-size: 12.5px; margin-top: 6px; font-weight: 600; }
 .modal-card textarea { margin-bottom: 4px; }
+
+/* Language selector (top right, next to Settings) */
+.lang-select { flex: none; min-width: 0; align-self: center; padding: 6px 8px; font-size: 12px; border-radius: 8px; background: var(--card); }
