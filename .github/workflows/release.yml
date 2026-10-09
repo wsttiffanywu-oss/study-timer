@@ -1,0 +1,41 @@
+# When a GitHub Release is published, build the two single-language packages
+# and attach them to it:
+#   学习计时器.zip  (Chinese only)
+#   study_timer.zip (English only)
+name: Attach download packages to release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the packages to (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: Build packages
+        run: python3 scripts/build_packages.py
+
+      - name: Attach to release
+        run: |
+          gh release upload "$TAG" \
+            "dist/学习计时器.zip#学习计时器.zip (中文版 / Chinese)" \
+            "dist/study_timer.zip#study_timer.zip (English version)" \
+            --clobber
+
+      - name: Show the file names GitHub stored
+        run: gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  |  \(.label)"'
