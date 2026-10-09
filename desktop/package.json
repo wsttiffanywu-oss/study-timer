@@ -1,0 +1,33 @@
+{
+  "name": "study-timer-desktop",
+  "productName": "Study Timer",
+  "version": "0.2.0",
+  "description": "Study Timer desktop app (Electron shell around the web app)",
+  "private": true,
+  "license": "SEE LICENSE IN ../LICENSE",
+  "author": "Tiffany Wu",
+  "main": "main.js",
+  "scripts": {
+    "stage:zh": "node stage.js zh",
+    "stage:en": "node stage.js en",
+    "start:zh": "node stage.js zh && electron .",
+    "start:en": "node stage.js en && electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "sql.js": "1.11.0"
+  },
+  "build": {
+    "appId": "com.wsttiffanywu.studytimer",
+    "files": ["main.js", "preload.js", "app/**/*"],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "icon.png",
+      "identity": null,
+      "target": "dir"
+    }
+  }
+}

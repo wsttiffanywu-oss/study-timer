@@ -1,0 +1,105 @@
+# Builds the macOS desktop app (one universal .dmg per language: Intel + Apple silicon).
+#  - on a pull request that touches the desktop app: builds and attaches the .dmg files to the run
+#    (Actions tab -> the run -> Artifacts) so they can be tried before merging
+#  - when a Release is published (or run by hand with a tag): also attaches them to that Release
+name: Build macOS desktop app
+
+on:
+  pull_request:
+    paths: ["desktop/**", "app.js", "index.html", "i18n.js", "style.css", "ai-import.js", "scripts/build_packages.py", ".github/workflows/desktop-mac.yml"]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the .dmg files to (leave empty to only build)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lang: zh
+            product: "学习计时器"
+            appid: com.wsttiffanywu.studytimer.zh
+            dmg: xuexi_jishiqi-mac.dmg
+            label: "学习计时器 Mac 版 (.dmg，中文)"
+          - lang: en
+            product: "Study Timer"
+            appid: com.wsttiffanywu.studytimer.en
+            dmg: study_timer-mac.dmg
+            label: "Study Timer for Mac (.dmg, English)"
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      - name: Stage the ${{ matrix.lang }} web files
+        working-directory: desktop
+        run: node stage.js ${{ matrix.lang }}
+
+      - name: Build the universal .app
+        working-directory: desktop
+        run: |
+          npx electron-builder --mac --universal \
+            -c.productName="${{ matrix.product }}" \
+            -c.appId="${{ matrix.appid }}" \
+            -c.directories.output="out" \
+            -c.mac.target=dir
+          ls -la out out/mac-universal
+
+      - name: Sign (ad hoc) and check
+        working-directory: desktop
+        run: |
+          APP="out/mac-universal/${{ matrix.product }}.app"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          EXE="$APP/Contents/MacOS/$(ls "$APP/Contents/MacOS" | head -1)"
+          lipo -archs "$EXE"
+          lipo -archs "$EXE" | grep -q arm64
+          lipo -archs "$EXE" | grep -q x86_64
+
+      - name: Start the app once and check it works (smoke test)
+        working-directory: desktop
+        run: |
+          APP="out/mac-universal/${{ matrix.product }}.app"
+          EXE="$APP/Contents/MacOS/$(ls "$APP/Contents/MacOS" | head -1)"
+          STUDY_TIMER_SMOKE=1 STUDY_TIMER_USERDATA="$RUNNER_TEMP/smoke-userdata" "$EXE" 2>&1 | tee smoke.log
+          grep -q "SMOKE-OK lang=${{ matrix.lang }}" smoke.log
+
+      - name: Make the .dmg
+        working-directory: desktop
+        run: |
+          mkdir -p dmgsrc dist
+          cp -R "out/mac-universal/${{ matrix.product }}.app" dmgsrc/
+          ln -s /Applications dmgsrc/Applications
+          hdiutil create -volname "${{ matrix.product }}" -srcfolder dmgsrc -ov -format UDZO "dist/${{ matrix.dmg }}"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.lang }}
+          path: desktop/dist/${{ matrix.dmg }}
+
+      - name: Attach to the release
+        if: env.TAG != ''
+        working-directory: desktop
+        run: gh release upload "$TAG" "dist/${{ matrix.dmg }}#${{ matrix.label }}" --clobber

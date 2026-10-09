@@ -39,6 +39,18 @@ The two zips are the same app with the interface language fixed (no language dro
 
 > The first time you open it you need to be online once, to load the database component (sql.js).
 
+#### Mac desktop app (testing)
+
+On a Mac you can also install it as a separate app, with no browser and no unzipping:
+
+1. On the [Releases page](../../releases/latest) download **Study Timer for Mac (.dmg, English)** (中文版: `xuexi_jishiqi-mac.dmg`). It works on both Intel and Apple silicon Macs.
+2. Double-click the `.dmg` and drag the app into your **Applications** folder.
+3. **The first time you open it, macOS will block it**, because the author has no paid Apple developer account and the app is not notarized by Apple. To open it anyway: double-click the app, click "Done", then open **System Settings → Privacy & Security**, scroll to the bottom and click **Open Anyway**. After that it opens normally.
+
+Your data is kept in this app's own folder on your computer (`~/Library/Application Support/Study Timer/data`), so clearing browser data does not affect it, and a JSON backup is saved automatically every day in the `backups` folder next to it (the last 30 are kept). The menu **File → Show Data Folder** opens it. The desktop app and the web version do not share data: to move your web data over, click "Export JSON backup" in the web version and "Import JSON backup" in the desktop app.
+
+The desktop app is new and still being tested. It is Mac-only for now; a Windows version has not been made yet.
+
 ### 2. Try the demo first
 
 Want to see it filled with data? Go to the **Schedule** tab, click **Import JSON backup**, and choose `demo-data.json` from the folder. It is a made-up timetable. You can delete the items one by one afterwards by opening them in the calendar.
@@ -92,6 +104,7 @@ Tips:
 - When you use AI import, the images and text you choose are sent from your browser straight to Anthropic for recognition. If your timetable contains anything you don't want to upload, crop it out first or add items by hand instead
 - Your study records and the schedule itself are never uploaded
 - **Don't save a key on a shared computer.** You can clear it in Settings when you're done
+- In the desktop app the key is kept in the database file in the app's data folder (not encrypted), so don't share that folder with anyone; the daily JSON backups do not contain the key
 
 ## No API key? Use your own AI to make the JSON
 
@@ -215,6 +228,8 @@ So far it has only been tested in desktop browsers.
 - [x] English README
 - [x] Online demo page (GitHub Pages)
 - [x] Separate Chinese-only and English-only download packages (Releases)
+- [x] Mac desktop app (.dmg, data kept in the app's own folder, daily automatic backup)
+- [ ] Windows desktop app
 - [ ] Phone experience
 
 ## License
