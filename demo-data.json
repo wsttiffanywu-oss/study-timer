@@ -1,0 +1,125 @@
+{
+  "courses": [
+    "Calculus",
+    "Intro Programming",
+    "Statistics",
+    "Physics",
+    "Study Group",
+    "Writing Workshop"
+  ],
+  "events": [
+    {
+      "id": "demo-1",
+      "course": "Calculus",
+      "kind": "class",
+      "type": "recurring",
+      "day": 0,
+      "start": "09:00",
+      "end": "11:00",
+      "loc": "Room A101"
+    },
+    {
+      "id": "demo-2",
+      "course": "Calculus",
+      "kind": "class",
+      "type": "recurring",
+      "day": 2,
+      "start": "09:00",
+      "end": "10:00",
+      "loc": "Room A101"
+    },
+    {
+      "id": "demo-3",
+      "course": "Intro Programming",
+      "kind": "class",
+      "type": "recurring",
+      "day": 0,
+      "start": "13:00",
+      "end": "15:00",
+      "loc": "Lab B2"
+    },
+    {
+      "id": "demo-4",
+      "course": "Intro Programming",
+      "kind": "class",
+      "type": "recurring",
+      "day": 3,
+      "start": "13:00",
+      "end": "14:00",
+      "loc": "Room C204"
+    },
+    {
+      "id": "demo-5",
+      "course": "Statistics",
+      "kind": "class",
+      "type": "recurring",
+      "day": 1,
+      "start": "10:00",
+      "end": "12:00",
+      "loc": "Hall D1"
+    },
+    {
+      "id": "demo-6",
+      "course": "Statistics",
+      "kind": "class",
+      "type": "recurring",
+      "day": 4,
+      "start": "10:00",
+      "end": "11:00",
+      "loc": "Room D12"
+    },
+    {
+      "id": "demo-7",
+      "course": "Physics",
+      "kind": "class",
+      "type": "recurring",
+      "day": 2,
+      "start": "14:00",
+      "end": "16:00",
+      "loc": "Room E305"
+    },
+    {
+      "id": "demo-8",
+      "course": "Physics",
+      "kind": "class",
+      "type": "recurring",
+      "day": 4,
+      "start": "14:00",
+      "end": "15:00",
+      "loc": "Lab E1"
+    },
+    {
+      "id": "demo-9",
+      "course": "Calculus",
+      "kind": "officehour",
+      "type": "recurring",
+      "day": 1,
+      "start": "15:00",
+      "end": "16:00",
+      "loc": "Room A220"
+    },
+    {
+      "id": "demo-10",
+      "course": "Study Group",
+      "kind": "activity",
+      "type": "recurring",
+      "day": 3,
+      "start": "18:00",
+      "end": "20:00",
+      "loc": "Library 2F"
+    },
+    {
+      "id": "demo-11",
+      "course": "Writing Workshop",
+      "kind": "activity",
+      "type": "recurring",
+      "day": 1,
+      "start": "18:00",
+      "end": "19:00",
+      "loc": "Student Centre",
+      "startDate": "2026-10-13",
+      "endDate": "2026-11-03"
+    }
+  ],
+  "records": []
+}
