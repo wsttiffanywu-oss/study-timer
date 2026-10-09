@@ -51,7 +51,7 @@ Three ways, pick any:
 | --- | --- | --- |
 | **AI import**: screenshot / handwritten photo / text | Yes | The lazy way. Fastest when you have many classes |
 | **Add by hand**: the form below the calendar | No | Few classes, or just one or two items |
-| **JSON import**: a file in a fixed format | No | Entering many at once, or having another AI tool generate the file (format below) |
+| **JSON import**: a file in a fixed format | No | Entering many at once, or having your own chat AI generate the file for free (see [below](#no-api-key-use-your-own-ai-to-make-the-json)) |
 
 Without an API key everything except AI import works normally.
 
@@ -93,6 +93,64 @@ Tips:
 - Your study records and the schedule itself are never uploaded
 - **Don't save a key on a shared computer.** You can clear it in Settings when you're done
 
+## No API key? Use your own AI to make the JSON
+
+AI import needs an API key (and a little credit). If you'd rather not pay, you can **ask the chat AI you already use (ChatGPT, Claude, Gemini, etc., the free version is fine) to turn your timetable into a JSON file**, then bring it in with **Import JSON backup**. This route is completely free and needs no key.
+
+**Step 1: send the prompt below to the AI together with your timetable.** The timetable can be plain text; if that AI accepts images, you can send a screenshot instead.
+
+````text
+Please turn my timetable into JSON. Output only one JSON code block, with no explanation.
+
+Format:
+
+{
+  "courses": ["MAT101", "CSC108"],
+  "events": [
+    {
+      "course": "MAT101",
+      "kind": "class",
+      "type": "recurring",
+      "day": 0,
+      "start": "10:00",
+      "end": "11:00",
+      "loc": "Room 101"
+    },
+    {
+      "course": "MAT101",
+      "kind": "exam",
+      "type": "oneoff",
+      "date": "2026-12-10",
+      "start": "09:00",
+      "end": "12:00",
+      "loc": "Gym"
+    }
+  ]
+}
+
+Rules:
+1. kind must be one of: class, officehour, activity (optional activity), exam.
+2. type must be recurring (repeats weekly) or oneoff (happens once).
+3. recurring items need day: 0 = Monday, 1 = Tuesday, ..., 6 = Sunday. Do not write date.
+4. oneoff items need date in the format YYYY-MM-DD. Do not write day.
+5. start and end use 24-hour HH:MM, and end must be later than start.
+6. For something that repeats weekly for a fixed number of weeks: use recurring and also add "startDate" (the date of the first session) and "endDate" (the date of the last session), both YYYY-MM-DD.
+7. Leave out loc if there is none. No id is needed.
+8. If something is unclear or you are not sure, do not guess; leave it out of the JSON.
+
+My timetable:
+(paste your timetable here, or send a screenshot below)
+````
+
+**Step 2: save it as a file.** Copy the JSON the AI gives you into a plain text file (Notepad or any text editor) and save it as `my-timetable.json` (the extension must be `.json`).
+
+**Step 3: import it.** On the Schedule tab click **Import JSON backup** and choose that file. When it finishes it tells you how many items were added and how many had the wrong format and were skipped.
+
+Notes:
+- The AI can make mistakes, especially with dates and weekdays, so take a look at the calendar afterwards. A wrong item can be opened and edited or deleted.
+- What you send to a chat AI is handled under that AI's own privacy rules and has nothing to do with this project.
+- Importing the same file twice does not create duplicate items.
+
 ## Where is my data? How do I back it up?
 
 Your data is kept in the local storage of **the browser you use**, which means:
@@ -127,7 +185,8 @@ Your data is kept in the local storage of **the browser you use**, which means:
 - `kind`: one of `class`, `officehour`, `activity` (optional activity), `exam`
 - `type`: `recurring` (repeats weekly, needs `day`, where 0 = Monday) or `oneoff` (happens once, needs `date` in the format `YYYY-MM-DD`)
 - A weekly item can also have `startDate`, `endDate` (valid period) and `excludeDates` (dates to skip)
-- Every item's `id` must be unique
+- `id` can be left out (one is generated); if you do write it, it must be unique
+- Items with the wrong format (for example no course name, an invalid time, or `end` not later than `start`) are skipped, and you are told how many after the import
 
 See `demo-data.json` for a complete example.
 

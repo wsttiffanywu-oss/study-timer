@@ -170,6 +170,7 @@
     "imp.failMsg": "不是合法的JSON文件：{err}",
     "imp.doneTitle": "导入完成",
     "imp.skipped": "（跳过 {n} 条已存在的）",
+    "imp.invalid": "（另有 {n} 条格式不对，已跳过）",
     "imp.line1": "课程 {c} 条，课表事项新增 {e} 条{skip}。",
     "imp.line2": "学习记录：新增 {a} 条，合并 {m} 条（同课程同日期时间段有重叠，取并集），跳过完全重复 {s} 条。",
 
@@ -410,6 +411,7 @@
     "imp.failMsg": "Not a valid JSON file: {err}",
     "imp.doneTitle": "Import complete",
     "imp.skipped": " ({n} already existing, skipped)",
+    "imp.invalid": " ({n} had the wrong format and were skipped)",
     "imp.line1": "Courses: {c}. Schedule items added: {e}{skip}.",
     "imp.line2": "Study records: {a} added, {m} merged (same course and date with overlapping times are combined), {s} exact duplicates skipped.",
 
