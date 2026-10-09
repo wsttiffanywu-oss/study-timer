@@ -44,9 +44,9 @@ def drop_table(js, lang):
     return sub1(r"  TABLES\.%s = \{.*?\n  \};\n\n?" % lang, "", js, re.S)
 
 
-def build(lang, cfg):
-    stage = os.path.join(DIST, "_stage", cfg["name"])
-    shutil.rmtree(os.path.join(DIST, "_stage"), ignore_errors=True)
+def stage_package(lang, cfg, stage):
+    """Lay out one single-language package (the files that go into the zip) in `stage`."""
+    shutil.rmtree(stage, ignore_errors=True)
     for f in COMMON:
         os.makedirs(os.path.dirname(os.path.join(stage, f)), exist_ok=True)
         shutil.copy(os.path.join(ROOT, f), os.path.join(stage, f))
@@ -75,6 +75,13 @@ def build(lang, cfg):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(os.path.join(ROOT, "docs", "img", s), dst)
 
+
+
+def build(lang, cfg):
+    stage = os.path.join(DIST, "_stage", cfg["name"])
+    shutil.rmtree(os.path.join(DIST, "_stage"), ignore_errors=True)
+    stage_package(lang, cfg, stage)
+
     # zip (top-level folder = package name)
     out = os.path.join(DIST, cfg["zip"])
     if os.path.exists(out):
@@ -89,6 +96,12 @@ def build(lang, cfg):
 
 
 if __name__ == "__main__":
-    os.makedirs(DIST, exist_ok=True)
-    for lang, cfg in PACKAGES.items():
-        build(lang, cfg)
+    if len(sys.argv) == 3 and sys.argv[1] == "--stage-only":
+        # Used by desktop/stage.js: lay out <dir>/zh and <dir>/en without zipping.
+        for lang, cfg in PACKAGES.items():
+            stage_package(lang, cfg, os.path.join(os.path.abspath(sys.argv[2]), lang))
+            print("staged", lang)
+    else:
+        os.makedirs(DIST, exist_ok=True)
+        for lang, cfg in PACKAGES.items():
+            build(lang, cfg)

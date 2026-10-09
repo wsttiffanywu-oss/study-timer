@@ -36,6 +36,14 @@ async function idbSet(key, value) {
   });
 }
 
+// Where the database file is kept. In the browser that is IndexedDB. The desktop app's preload
+// script provides window.desktopStorage instead, which keeps it as a real file in the app's own
+// data folder (see desktop/main.js).
+const desktop = window.desktopStorage || null;
+const storage = desktop
+  ? { load: () => desktop.load(), save: (data) => desktop.save(data) }
+  : { load: () => idbGet(IDB_KEY), save: (data) => idbSet(IDB_KEY, data) };
+
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS courses (
   name TEXT PRIMARY KEY
@@ -89,10 +97,21 @@ function persist() {
   // Debounced so a burst of writes (e.g. rendering) doesn't serialize repeatedly.
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(async () => {
-    const data = db.export();
-    await idbSet(IDB_KEY, data);
+    persistTimer = null;
+    try { await storage.save(db.export()); } catch (err) { console.error("Saving the database failed:", err); }
   }, 60);
 }
+// When the page is closing or reloading, don't wait for the debounce timer. The desktop app
+// writes synchronously; the browser starts its IndexedDB write right away.
+function flushPersist() {
+  if (!persistTimer || !db) return;
+  clearTimeout(persistTimer); persistTimer = null;
+  const data = db.export();
+  if (desktop && desktop.saveSync) desktop.saveSync(data);
+  else storage.save(data).catch(err => console.error("Saving the database failed:", err));
+}
+window.addEventListener("pagehide", flushPersist);
+window.addEventListener("beforeunload", flushPersist);
 
 function run(sql, params = []) {
   db.run(sql, params);
@@ -108,10 +127,10 @@ function queryAll(sql, params = []) {
 }
 
 async function initDatabase() {
-  const SQL = await initSqlJs({
-    locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/${file}`
-  });
-  const stored = await idbGet(IDB_KEY);
+  const SQL = await initSqlJs(desktop
+    ? { wasmBinary: await desktop.getWasm() }   // bundled with the app, works offline
+    : { locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/${file}` });
+  const stored = await storage.load();
   db = stored ? new SQL.Database(new Uint8Array(stored)) : new SQL.Database();
   db.run(SCHEMA_SQL); // safe even on an existing DB (CREATE TABLE IF NOT EXISTS)
   ensureColumn("events", "deleted_at", "TEXT");   // migration for DBs created before the trash feature
@@ -913,13 +932,16 @@ addEventBtn.addEventListener("click", () => {
 function deleteEvent(id) { dbDeleteEvent(id); renderCalendar(); }
 
 /* ---------------- backup import/export (generic — no course data hard-coded here) ---------------- */
-function exportBackup() {
-  const data = {
+function buildBackupData() {
+  return {
     exportedAt: new Date().toISOString(),
     courses: dbGetCourses(),
     events: dbGetEvents(),
     records: dbGetRecords()
   };
+}
+function exportBackup() {
+  const data = buildBackupData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = "study_timer_backup.json"; a.click();
@@ -1446,7 +1468,9 @@ async function init() {
   const statusEl = document.getElementById("dbStatus");
   try {
     await initDatabase();
-    statusEl.textContent = t("db.ok");
+    statusEl.textContent = t(desktop ? "db.okDesktop" : "db.ok");
+    // Desktop app: keep one readable JSON backup per day next to the database (kept for 30 days).
+    if (desktop && desktop.dailyBackup) { try { await desktop.dailyBackup(JSON.stringify(buildBackupData(), null, 2)); } catch (e) { console.error(e); } }
   } catch (err) {
     statusEl.textContent = t("db.fail", { err: err.message });
     console.error(err);
@@ -1487,7 +1511,7 @@ if (langSelect) {
 }
 
 window.addEventListener("beforeunload", (e) => {
-  if (timerState && !window.skipUnloadWarning) { e.preventDefault(); e.returnValue = ""; }
+  if (timerState && !window.skipUnloadWarning && !desktop) { e.preventDefault(); e.returnValue = ""; }
 });
 
 init();

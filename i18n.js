@@ -20,6 +20,7 @@
     "db.init": "正在初始化数据库…",
     "db.ok": "数据保存在本地的 SQLite 数据库里（通过浏览器 IndexedDB 持久化），不会上传到服务器（只有使用 AI 导入时，所选图片/文字才会发给 Anthropic）。",
     "db.fail": "数据库初始化失败：{err}（请检查网络能否访问 cdn.jsdelivr.net 来加载 sql.js）",
+    "db.okDesktop": "数据保存在你电脑上本应用自己的文件夹里（一个 SQLite 数据库文件），不会上传到服务器（只有使用 AI 导入时，所选图片/文字才会发给 Anthropic）。每天会自动备份一份 JSON。",
 
     "common.ok": "好",
     "common.close": "关闭",
@@ -261,6 +262,7 @@
     "db.init": "Initializing database…",
     "db.ok": "Your data is stored in a local SQLite database (persisted by the browser's IndexedDB) and is not uploaded to any server. Only when you use AI import are the images/text you pick sent to Anthropic.",
     "db.fail": "Database initialization failed: {err} (check that your network can reach cdn.jsdelivr.net to load sql.js)",
+    "db.okDesktop": "Your data is stored in this app's own folder on your computer (one SQLite database file) and is not uploaded to any server (only when you use AI import are the images/text you choose sent to Anthropic). A JSON backup is saved automatically every day.",
 
     "common.ok": "OK",
     "common.close": "Close",
