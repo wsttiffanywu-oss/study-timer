@@ -1,0 +1,15 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Personal data exports (backups contain your own schedule and study records)
+study_timer_backup*.json
+study_records*.csv
+
+# Future: never commit API keys
+.env

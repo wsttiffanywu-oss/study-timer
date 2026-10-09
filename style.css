@@ -1,0 +1,146 @@
+:root {
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --primary: #4a63e7;
+  --primary-dark: #3849c4;
+  --text: #222;
+  --muted: #888;
+  --border: #e3e5ec;
+  --danger: #e05a5a;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+.app { width: 100%; max-width: 1000px; }
+h1 { font-size: 21px; margin-bottom: 4px; }
+.sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab-btn {
+  padding: 9px 18px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted);
+}
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+select, input[type="text"], input[type="date"], input[type="time"], textarea {
+  padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border);
+  font-size: 14px; font-family: inherit;
+}
+select, input[type="text"] { flex: 1; min-width: 130px; }
+textarea { width: 100%; resize: vertical; min-height: 54px; }
+button { padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-weight: 600; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { background: #b7bce8; cursor: not-allowed; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:disabled { background: #f0c1c1; cursor: not-allowed; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.small { font-size: 12px; padding: 6px 10px; }
+
+.timer-display {
+  font-size: 46px; font-weight: 700; text-align: center; margin: 14px 0 6px;
+  font-variant-numeric: tabular-nums; letter-spacing: 1px;
+}
+.status { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 10px; min-height: 18px; }
+.actions { justify-content: center; margin: 10px 0 4px; }
+.note-label { font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.day-total { font-weight: 700; }
+.empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+.toolbar { justify-content: space-between; margin-bottom: 14px; }
+.delete-x { cursor: pointer; color: var(--muted); font-size: 13px; }
+.delete-x:hover { color: var(--danger); }
+.summary-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.note-text { color: var(--muted); font-style: italic; font-size: 12px; margin-top: 2px; }
+.db-status { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+/* Calendar */
+.week-nav { justify-content: space-between; margin-bottom: 12px; }
+.week-label { font-weight: 700; font-size: 15px; }
+.toggle-row { gap: 20px; margin-bottom: 14px; font-size: 13px; }
+.toggle-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+
+.cal-scroll { overflow-x: auto; }
+.cal-header-row {
+  display: grid; grid-template-columns: 46px repeat(7, minmax(90px, 1fr));
+  gap: 4px; margin-bottom: 4px; min-width: 720px;
+}
+.cal-header-cell { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; padding: 4px 0; }
+.cal-header-cell.today { color: var(--primary); }
+
+.cal-timegrid { display: flex; min-width: 720px; }
+.cal-timeaxis { width: 46px; position: relative; flex-shrink: 0; }
+.cal-timeaxis .hour-label {
+  position: absolute; left: 0; right: 6px; text-align: right; font-size: 10.5px;
+  color: var(--muted); transform: translateY(-6px);
+}
+.cal-days { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; position: relative; }
+.cal-daycol { position: relative; border-left: 1px solid var(--border); border-radius: 4px; }
+
+.cal-event-block {
+  position: absolute; border-radius: 6px; padding: 3px 6px;
+  font-size: 10.5px; overflow: hidden; line-height: 1.28; box-sizing: border-box; cursor: pointer;
+}
+.cal-event-block .ev-time { font-weight: 700; }
+.cal-event-block .ev-course { font-weight: 700; }
+.cal-event-block .ev-loc { opacity: 0.8; }
+.cal-event-block .ev-del {
+  position: absolute; top: 2px; right: 4px; cursor: pointer; font-size: 10px; opacity: 0.55;
+}
+.cal-event-block .ev-del:hover { opacity: 1; }
+.kind-class { border-left: 4px solid var(--accent); }
+.kind-officehour { border: 1.5px dashed var(--accent); }
+.kind-activity { border: 1.5px dotted var(--accent); }
+.kind-exam { border: 2px solid var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.kind-log { border-left: 4px solid var(--accent); }
+
+/* Paused/break stretch inside a continuous "已学习" block — hatched so the gap
+   reads as "not actively studied" without splitting the block into pieces. */
+.log-break-stripe {
+  position: absolute; left: 0; right: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.6) 0px, rgba(255,255,255,0.6) 4px,
+    rgba(255,255,255,0.15) 4px, rgba(255,255,255,0.15) 8px
+  );
+  border-top: 1px dashed rgba(255,255,255,0.85);
+  border-bottom: 1px dashed rgba(255,255,255,0.85);
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-grid .full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; color: var(--muted); margin-bottom: 3px; display: block; }
+.radio-row { display: flex; gap: 14px; font-size: 13px; align-items: center; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+}
+.modal-card {
+  background: #fff; border-radius: 14px; padding: 22px; width: 100%; max-width: 360px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+}
+.modal-card h3 { margin: 0 0 12px; font-size: 17px; }
+.modal-card p { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.modal-card input[type="time"], .modal-card input[type="text"] { width: 100%; margin-bottom: 14px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.modal-detail-row { font-size: 14px; margin-bottom: 10px; }
+.modal-detail-row .label { color: var(--muted); font-size: 11.5px; display: block; margin-bottom: 2px; }
