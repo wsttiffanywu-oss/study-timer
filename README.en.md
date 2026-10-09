@@ -25,7 +25,7 @@ A study timer plus weekly timetable for students. Track how long you spend on ea
 
 ### 1. Download and open
 
-1. Open the [Releases page](../../releases/latest) of this repository and download **study_timer.zip** (the English version; 中文版是 `学习计时器.zip`)
+1. Open the [Releases page](../../releases/latest) of this repository and download **study_timer.zip** (the English version; 中文版是 `xuexi_jishiqi.zip`，显示名为"学习计时器")
 2. Unzip it to any folder
 3. Double-click `index.html` to open it in your browser (Chrome or Edge recommended)
 

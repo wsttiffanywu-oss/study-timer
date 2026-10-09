@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Build the two single-language download packages from this one source tree.
 
-    python3 scripts/build_packages.py          # writes dist/学习计时器.zip and dist/study_timer.zip
+    python3 scripts/build_packages.py          # writes dist/xuexi_jishiqi.zip and dist/study_timer.zip
+
+The Chinese zip's file name is ASCII because GitHub Releases rewrites non-ASCII
+asset names (学习计时器.zip became default.zip); the folder inside is still 学习计时器.
 
 Each package has the language fixed (no drop-down), contains only that
 language's text table and README, and never includes i18n-orig.js.
@@ -12,8 +15,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, "dist")
 
 PACKAGES = {
-    "zh": {"name": "学习计时器", "readme": "README.md",    "html_lang": "zh-CN", "drop": "en", "shots": ["timer.png", "calendar.png", "ai-review.png"]},
-    "en": {"name": "study_timer", "readme": "README.en.md", "html_lang": "en",    "drop": "zh", "shots": ["en-timer.png", "en-calendar.png", "en-ai-review.png"]},
+    "zh": {"name": "学习计时器", "zip": "xuexi_jishiqi.zip", "readme": "README.md",    "html_lang": "zh-CN", "drop": "en", "shots": ["timer.png", "calendar.png", "ai-review.png"]},
+    "en": {"name": "study_timer", "zip": "study_timer.zip", "readme": "README.en.md", "html_lang": "en",    "drop": "zh", "shots": ["en-timer.png", "en-calendar.png", "en-ai-review.png"]},
 }
 COMMON = ["index.html", "style.css", "app.js", "ai-import.js", "i18n.js", "LICENSE", "demo-data.json"]
 
@@ -73,7 +76,7 @@ def build(lang, cfg):
         shutil.copy(os.path.join(ROOT, "docs", "img", s), dst)
 
     # zip (top-level folder = package name)
-    out = os.path.join(DIST, cfg["name"] + ".zip")
+    out = os.path.join(DIST, cfg["zip"])
     if os.path.exists(out):
         os.remove(out)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:

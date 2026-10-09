@@ -25,7 +25,7 @@
 
 ### 1. 下载并打开
 
-1. 打开本仓库的 [Releases 页面](../../releases/latest)，下载中文版 **学习计时器.zip**（English version: `study_timer.zip`）
+1. 打开本仓库的 [Releases 页面](../../releases/latest)，下载中文版 **学习计时器**（文件名是 `xuexi_jishiqi.zip`）；English version: `study_timer.zip`
 2. 解压到任意文件夹
 3. 双击 `index.html`，用浏览器打开（推荐 Chrome 或 Edge）
 
