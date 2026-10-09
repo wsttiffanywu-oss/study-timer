@@ -1336,8 +1336,8 @@ function showSettingsModal() {
       注册登录，在 API Keys 页面创建一个，再粘贴到上面。
     </p>
     <p style="margin-top:-6px;">
-      这个 key 只保存在<b>这台电脑的这个浏览器</b>里，不会上传到任何服务器，也不会出现在导出的备份里。
-      使用 AI 识别时，费用由你自己的 Anthropic 账号承担。请不要在公共电脑上保存 key。
+      这个 key 只保存在<b>这台电脑的这个浏览器</b>里，不会出现在导出的备份里。
+      只有在你使用 AI 导入时，它才会随识别请求发给 Anthropic（不经过其他任何服务器），费用由你自己的 Anthropic 账号承担。请不要在公共电脑上保存 key。
       不想用 AI 的话可以不设置，手动添加课表和导入 JSON 照常可用。
     </p>
     <div class="modal-actions">
@@ -1371,7 +1371,7 @@ async function init() {
   const statusEl = document.getElementById("dbStatus");
   try {
     await initDatabase();
-    statusEl.textContent = "数据保存在本地的 SQLite 数据库里（通过浏览器 IndexedDB 持久化），不会上传到任何服务器。";
+    statusEl.textContent = "数据保存在本地的 SQLite 数据库里（通过浏览器 IndexedDB 持久化），不会上传到服务器（只有使用 AI 导入时，所选图片/文字才会发给 Anthropic）。";
   } catch (err) {
     statusEl.textContent = "数据库初始化失败：" + err.message + "（请检查网络能否访问 cdn.jsdelivr.net 来加载 sql.js）";
     console.error(err);
