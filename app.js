@@ -988,6 +988,48 @@ function importRecordsMerged(incomingRecords) {
   return { added, merged, skipped };
 }
 
+// Tidy up one schedule item from an imported file (which may have been written by hand or by
+// another AI tool). Returns null when it can't be used. Files exported by this app pass unchanged.
+function normalizeImportedEvent(raw, usedIds) {
+  if (!raw || typeof raw !== "object") return null;
+  const course = typeof raw.course === "string" ? raw.course.trim() : "";
+  if (!course) return null;
+  const type = raw.type === "recurring" || raw.type === "oneoff" ? raw.type : null;
+  if (!type) return null;
+  const toMin = (v) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || "").trim());
+    if (!m) return null;
+    const h = +m[1], mi = +m[2], total = h * 60 + mi;
+    return mi < 60 && total <= 24 * 60 ? total : null;
+  };
+  const fmt = (min) => String(Math.floor(min / 60)).padStart(2, "0") + ":" + String(min % 60).padStart(2, "0");
+  const a = toMin(raw.start), b = toMin(raw.end);
+  if (a === null || b === null || a >= b) return null;
+  const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const ev = {
+    id: raw.id !== undefined && raw.id !== null && String(raw.id) !== "" ? String(raw.id) : "",
+    course,
+    kind: ["class", "officehour", "activity", "exam"].includes(raw.kind) ? raw.kind : "class",
+    type, start: fmt(a), end: fmt(b),
+    loc: typeof raw.loc === "string" ? raw.loc : ""
+  };
+  if (type === "recurring") {
+    if (!Number.isInteger(raw.day) || raw.day < 0 || raw.day > 6) return null;
+    ev.day = raw.day;
+    if (isDate(raw.startDate)) ev.startDate = raw.startDate;
+    if (isDate(raw.endDate)) ev.endDate = raw.endDate;
+    if (ev.startDate && ev.endDate && ev.endDate < ev.startDate) return null;
+    if (Array.isArray(raw.excludeDates)) { const x = raw.excludeDates.filter(isDate); if (x.length) ev.excludeDates = x; }
+  } else {
+    if (!isDate(raw.date)) return null;
+    ev.date = raw.date;
+  }
+  if (!ev.id) { // no id in the file: make one that is not taken yet
+    let n = 0; do { ev.id = "imp-" + Date.now().toString(36) + "-" + (n++); } while (usedIds && usedIds.has(ev.id));
+  }
+  return ev;
+}
+
 function importBackupFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -1002,9 +1044,19 @@ function importBackupFile(file) {
     const existingEventIds = dbGetAllEventIds();
     let addedCourses = 0, addedEvents = 0, skippedEvents = 0;
 
-    (data.courses || []).forEach(c => { dbAddCourse(c); addedCourses++; });
-    (data.events || []).forEach(ev => {
-      if (existingEventIds.has(ev.id)) { skippedEvents++; return; }
+    (Array.isArray(data.courses) ? data.courses : []).forEach(c => {
+      if (typeof c === "string" && c.trim()) { dbAddCourse(c.trim()); addedCourses++; }
+    });
+    let invalidEvents = 0;
+    // Same item already in the schedule (even under another id) counts as already existing.
+    const sig = (e) => [e.course, e.kind || "class", e.type, e.type === "recurring" ? e.day : e.date, e.start, e.end, e.startDate || "", e.endDate || ""].join("|");
+    const existingSigs = new Set(dbGetEvents().map(sig));
+    (Array.isArray(data.events) ? data.events : []).forEach(raw => {
+      const ev = normalizeImportedEvent(raw, existingEventIds);
+      if (!ev) { invalidEvents++; return; }
+      if (existingEventIds.has(ev.id) || existingSigs.has(sig(ev))) { skippedEvents++; return; }
+      existingSigs.add(sig(ev));
+      dbAddCourse(ev.course);
       dbAddEvent(ev);
       existingEventIds.add(ev.id);
       addedEvents++;
@@ -1014,7 +1066,7 @@ function importBackupFile(file) {
     renderCourseOptions(); renderRecords(); renderCalendar();
     showModal(`
       <h3>${t("imp.doneTitle")}</h3>
-      <p>${t("imp.line1", { c: addedCourses, e: addedEvents, skip: skippedEvents ? t("imp.skipped", { n: skippedEvents }) : "" })}<br>
+      <p>${t("imp.line1", { c: addedCourses, e: addedEvents, skip: (skippedEvents ? t("imp.skipped", { n: skippedEvents }) : "") + (invalidEvents ? t("imp.invalid", { n: invalidEvents }) : "") })}<br>
       ${t("imp.line2", { a: addedRecords, m: mergedRecords, s: skippedRecords })}</p>
       <div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">${t("common.ok")}</button></div>
     `);
