@@ -1,6 +1,6 @@
 # When a GitHub Release is published, build the two single-language packages
 # and attach them to it:
-#   学习计时器.zip  (Chinese only)
+#   xuexi_jishiqi.zip  (Chinese only; shown as 学习计时器.zip)
 #   study_timer.zip (English only)
 name: Attach download packages to release
 
@@ -25,15 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Build packages
         run: python3 scripts/build_packages.py
 
       - name: Attach to release
         run: |
+          # remove the badly named file from the first attempt, if present
+          gh release delete-asset "$TAG" default.zip -y || true
           gh release upload "$TAG" \
-            "dist/学习计时器.zip#学习计时器.zip (中文版 / Chinese)" \
+            "dist/xuexi_jishiqi.zip#学习计时器.zip (中文版 / Chinese)" \
             "dist/study_timer.zip#study_timer.zip (English version)" \
             --clobber
 
