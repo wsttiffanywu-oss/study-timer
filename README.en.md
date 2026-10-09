@@ -23,6 +23,12 @@ A study timer plus weekly timetable for students. Track how long you spend on ea
 
 ## How to use
 
+### 0. Don't want to download? Try it online
+
+Open the **[online demo](https://wsttiffanywu-oss.github.io/study-timer/)** and use it right away, nothing to download. It is the same program as the download, and your data stays in your own browser only (nothing is uploaded to any server). Use the drop-down at the top right to switch between English and 中文.
+
+> The online version and the downloaded version do not share data. The online version keeps its data in that web page's own storage, so it disappears if you switch browsers or clear site data; use "Export JSON backup" to keep anything important. For long-term use, download the zip below.
+
 ### 1. Download and open
 
 1. Open the [Releases page](../../releases/latest) of this repository and download **study_timer.zip** (the English version; 中文版是 `xuexi_jishiqi.zip`，显示名为"学习计时器")
@@ -148,7 +154,7 @@ So far it has only been tested in desktop browsers.
 - [x] Manual add form supports a "valid period" for series that run a few weeks
 - [x] English and 中文 interface with a switch
 - [x] English README
-- [ ] Online demo page (GitHub Pages)
+- [x] Online demo page (GitHub Pages)
 - [x] Separate Chinese-only and English-only download packages (Releases)
 - [ ] Phone experience
 
