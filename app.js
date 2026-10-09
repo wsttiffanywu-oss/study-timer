@@ -194,11 +194,12 @@ function dbGetDeletedEvents() {
 }
 function dbUpdateEvent(id, ev) {
   run(
-    `UPDATE events SET course=?, kind=?, type=?, day=?, date=?, start=?, end_time=?, loc=? WHERE id=?`,
+    `UPDATE events SET course=?, kind=?, type=?, day=?, date=?, start=?, end_time=?, loc=?, start_date=?, end_date=? WHERE id=?`,
     [
       ev.course, ev.kind, ev.type,
       ev.day === undefined ? null : ev.day,
       ev.date || null, ev.start, ev.end, ev.loc || null,
+      ev.startDate || null, ev.endDate || null,
       id
     ]
   );
@@ -742,6 +743,9 @@ const evNewCourseInput = document.getElementById("evNewCourseInput");
 const evKindSelect = document.getElementById("evKindSelect");
 const evDayWrap = document.getElementById("evDayWrap");
 const evDateWrap = document.getElementById("evDateWrap");
+const evRangeWrap = document.getElementById("evRangeWrap");
+const evStartDateInput = document.getElementById("evStartDateInput");
+const evEndDateInput = document.getElementById("evEndDateInput");
 const evDaySelect = document.getElementById("evDaySelect");
 const evDateInput = document.getElementById("evDateInput");
 const evStartInput = document.getElementById("evStartInput");
@@ -857,6 +861,7 @@ document.querySelectorAll('input[name="evType"]').forEach(r => {
     const val = document.querySelector('input[name="evType"]:checked').value;
     evDayWrap.style.display = val === "recurring" ? "block" : "none";
     evDateWrap.style.display = val === "oneoff" ? "block" : "none";
+    evRangeWrap.style.display = val === "recurring" ? "block" : "none";
   });
 });
 
@@ -881,6 +886,14 @@ addEventBtn.addEventListener("click", () => {
   const ev = { id: "e" + Date.now(), course, kind, type, start, end, loc };
   if (type === "recurring") {
     ev.day = parseInt(evDaySelect.value, 10);
+    const sd = evStartDateInput.value, ed = evEndDateInput.value;
+    if (sd && ed && ed < sd) {
+      showModal(`<h3>有效期不对</h3><p>结束日期不能早于开始日期。</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>`);
+      document.getElementById("modalOkBtn").addEventListener("click", hideModal);
+      return;
+    }
+    if (sd) ev.startDate = sd;
+    if (ed) ev.endDate = ed;
   } else {
     if (!evDateInput.value) {
       showModal(`<h3>缺少日期</h3><p>请选择日期。</p><div class="modal-actions"><button class="btn-primary small" id="modalOkBtn">好</button></div>`);
@@ -893,6 +906,7 @@ addEventBtn.addEventListener("click", () => {
   }
   dbAddEvent(ev);
   evNewCourseInput.value = ""; evLocInput.value = ""; evStartInput.value = ""; evEndInput.value = "";
+  evStartDateInput.value = ""; evEndDateInput.value = "";
   renderCalendar();
 });
 
@@ -1020,7 +1034,9 @@ document.getElementById("importBackupInput").addEventListener("change", (e) => {
 function showEventDetail(ev) {
   const kind = ev.kind || "class";
   const kindLabel = kind === "officehour" ? "Office Hour" : kind === "activity" ? "其他活动（可选参加）" : kind === "exam" ? "考试 / 测验" : "课程 / 固定安排";
-  const whenLabel = ev.type === "recurring" ? `${DAY_NAMES[ev.day]}　每周重复` : `${ev.date}　仅这一周`;
+  const rangeLabel = ev.type === "recurring" && (ev.startDate || ev.endDate)
+    ? `，有效期 ${ev.startDate || "…"} ~ ${ev.endDate || "…"}` : "";
+  const whenLabel = ev.type === "recurring" ? `${DAY_NAMES[ev.day]}　每周重复${rangeLabel}` : `${ev.date}　仅这一周`;
   showModal(`
     <h3>${escapeHtml(ev.course)}</h3>
     <div class="modal-detail-row"><span class="label">类型</span>${kindLabel}</div>
@@ -1067,6 +1083,14 @@ function editEventModal(ev) {
       <label class="form-label">具体日期</label>
       <input type="date" id="modalEvDate" value="${ev.date || ""}">
     </div>
+    <div id="modalEvRangeWrap" style="display:${isRecurring ? "block" : "none"};">
+      <label class="form-label">有效期（可选，留空 = 一直每周重复）</label>
+      <div class="row" style="gap:8px; flex-wrap:nowrap; margin-bottom:10px;">
+        <input type="date" id="modalEvStartDate" value="${ev.startDate || ""}" style="flex:1; min-width:0;">
+        <span style="color:var(--muted);">~</span>
+        <input type="date" id="modalEvEndDate" value="${ev.endDate || ""}" style="flex:1; min-width:0;">
+      </div>
+    </div>
     <label class="form-label">开始时间</label>
     <input type="time" id="modalEvStart" value="${ev.start}">
     <label class="form-label">结束时间</label>
@@ -1084,6 +1108,7 @@ function editEventModal(ev) {
       const recurring = document.querySelector('input[name="modalEvType"]:checked').value === "recurring";
       document.getElementById("modalEvDayWrap").style.display = recurring ? "block" : "none";
       document.getElementById("modalEvDateWrap").style.display = recurring ? "none" : "block";
+      document.getElementById("modalEvRangeWrap").style.display = recurring ? "block" : "none";
     });
   });
   document.getElementById("modalEvCancelBtn").addEventListener("click", () => showEventDetail(ev));
@@ -1102,6 +1127,10 @@ function editEventModal(ev) {
     const updated = { course, kind: newKind, type, start, end, loc };
     if (type === "recurring") {
       updated.day = parseInt(document.getElementById("modalEvDay").value, 10);
+      const sd = document.getElementById("modalEvStartDate").value, ed = document.getElementById("modalEvEndDate").value;
+      if (sd && ed && ed < sd) { showError("有效期的结束日期不能早于开始日期"); return; }
+      if (sd) updated.startDate = sd;
+      if (ed) updated.endDate = ed;
     } else {
       const dateVal = document.getElementById("modalEvDate").value;
       if (!dateVal) { showError("请选择日期"); return; }

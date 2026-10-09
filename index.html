@@ -133,6 +133,14 @@
           <label class="form-label">具体日期</label>
           <input type="date" id="evDateInput" style="width:100%;">
         </div>
+        <div class="full" id="evRangeWrap">
+          <label class="form-label">有效期（可选。比如只上 4 周，就填第一次和最后一次的日期；留空 = 一直每周重复）</label>
+          <div class="row" style="gap:8px; flex-wrap:nowrap;">
+            <input type="date" id="evStartDateInput" style="flex:1; min-width:0;">
+            <span style="color:var(--muted);">~</span>
+            <input type="date" id="evEndDateInput" style="flex:1; min-width:0;">
+          </div>
+        </div>
         <div>
           <label class="form-label">开始时间</label>
           <input type="time" id="evStartInput" style="width:100%;">
