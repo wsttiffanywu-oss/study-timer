@@ -1,0 +1,548 @@
+/* ------------------------------------------------------------------
+   Interface text — one table per language.
+
+   - t("key", { name: value }) returns the text for the current language;
+     "{name}" placeholders are replaced from the second argument.
+   - Static HTML uses data-i18n (text), data-i18n-html (text with markup),
+     data-i18n-ph (placeholder) and data-i18n-title (tooltip) attributes.
+   - The chosen language is kept in localStorage; switching reloads the page
+     (the timer state lives in the database, so nothing is lost).
+   - Languages: "zh" (中文), "en" (English), and optionally "orig" — see
+     i18n-orig.js, which is only a thin overlay on top of "zh".
+   ------------------------------------------------------------------ */
+(function () {
+  const LANG_KEY = "studyTimerLang";
+  const TABLES = (window.I18N_TABLES = window.I18N_TABLES || {});
+
+  TABLES.zh = {
+    "app.title": "课程时间管理",
+    "app.h1": "📚 课程时间管理",
+    "db.init": "正在初始化数据库…",
+    "db.ok": "数据保存在本地的 SQLite 数据库里（通过浏览器 IndexedDB 持久化），不会上传到服务器（只有使用 AI 导入时，所选图片/文字才会发给 Anthropic）。",
+    "db.fail": "数据库初始化失败：{err}（请检查网络能否访问 cdn.jsdelivr.net 来加载 sql.js）",
+
+    "common.ok": "好",
+    "common.close": "关闭",
+    "common.cancel": "取消",
+    "common.save": "保存",
+    "common.delete": "删除",
+    "common.edit": "编辑",
+    "list.sep": "、",
+
+    "tab.timer": "⏱ 计时器",
+    "tab.cal": "📅 课表",
+    "settings.btn": "⚙️ 设置",
+
+    "course.newPh": "新建课程/事项名称，回车添加",
+    "course.add": "添加",
+    "course.manage": "🗑 管理课程",
+
+    "timer.pickHint": "选择课程后点击开始",
+    "timer.start": "▶ 开始",
+    "timer.pause": "⏸ 暂停",
+    "timer.resume": "▶ 继续",
+    "timer.stop": "⏹ 结束并保存",
+    "timer.running": "正在计时：{course}",
+    "timer.paused": "已暂停：{course}",
+    "timer.noteLabel": "备注（可选，比如\"整理了笔记\"）",
+    "timer.notePh": "保存这条记录时会一起存下来",
+
+    "rec.title": "学习记录",
+    "rec.filterPh": "筛选日期 如 2026-09",
+    "rec.clearFilter": "清除筛选",
+    "rec.trash": "🗑 最近删除",
+    "rec.exportCsv": "导出CSV",
+    "rec.empty": "暂无记录，开始计时后会自动保存在这里",
+    "rec.emptyFiltered": "暂无记录（当前筛选条件下）",
+    "rec.dayTotal": "(共 {total})",
+    "rec.colCourse": "课程",
+    "rec.colDuration": "时长",
+    "rec.editTimeTitle": "点击修改开始/结束时间",
+    "rec.editCourseTitle": "点击修改课程/事项",
+    "rec.editNote": "编辑备注",
+    "rec.addNote": "+ 添加备注",
+    "csv.header": "日期,开始时间,结束时间,课程,时长(秒),时长(时分秒),备注",
+
+    "mc.title": "管理课程/事项",
+    "mc.help": "删除只是把它从下拉列表里移除，不会影响已经保存的学习记录和课表事项。",
+    "mc.none": "还没有课程/事项",
+    "mc.running": "（计时中，不能删）",
+
+    "trash.title": "🗑 最近删除",
+    "trash.help": "10天内删除的都在这里，可以恢复；超过10天会自动清掉。",
+    "trash.records": "学习记录（{n}）",
+    "trash.events": "课表事项（{n}）",
+    "trash.none": "没有",
+    "trash.restore": "恢复",
+    "trash.purge": "彻底删除",
+
+    "note.title": "编辑备注",
+    "note.info": "课程：{course}　{date}",
+    "ec.title": "修改课程/事项",
+    "ec.current": "当前：{course}　{date}　{dur}",
+    "ec.pick": "选择已有课程/事项",
+    "ec.new": "或输入新的名称（填了就用这个，不用选的）",
+    "ec.newPh": "新建课程/事项名称",
+    "et.title": "编辑开始/结束时间",
+    "et.info": "课程：{course}　当前时长：{dur}",
+    "et.overnight": "结束时间是第二天（跨过了午夜）",
+    "et.help": "保存后时长会按新的开始/结束时间重新计算。",
+    "et.errStillNotLater": "结束时间仍然不晚于开始时间，请检查填写",
+    "et.errEarlier": "结束时间比开始时间早——如果这段学习跨过了午夜，请勾选上面的选项",
+    "et.errFuture": "开始/结束时间不能晚于当前时间",
+
+    "cal.backupTitle": "导入 / 备份",
+    "cal.aiImport": "📷 AI导入课表",
+    "cal.exportJson": "导出JSON备份",
+    "cal.importJson": "导入JSON备份",
+    "cal.backupHelp": "导出会把课程、课表事项、学习记录打包成一个JSON文件；导入时选同样格式的文件即可合并进来（不会覆盖已有数据）。",
+    "cal.prev": "← 上一周",
+    "cal.next": "下一周 →",
+    "cal.thisWeek": "（本周）",
+    "cal.showOH": "显示答疑时间",
+    "cal.showActivity": "显示其他活动（可选参加）",
+    "cal.showLog": "显示已学习时间",
+    "cal.expand": "展开凌晨/深夜时段（0-8点、22-24点）",
+    "cal.hint": "双击事件块看详情；双击空白处可展开/收起凌晨深夜时段",
+    "tag.oh": " · 答疑",
+    "tag.activity": " · 活动",
+    "tag.exam": " · ⚠️考试",
+    "tag.log": " · 已学",
+    "stripe.title": "暂停",
+    "days": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+
+    "form.title": "添加课程/事项到课表",
+    "form.course": "课程/事项",
+    "form.newCoursePh": "或输入新的名称",
+    "form.type": "类型",
+    "kind.class": "课程 / 固定安排",
+    "kind.officehour": "答疑时间",
+    "kind.activity": "其他活动（可选参加）",
+    "kind.exam": "考试 / 测验",
+    "form.recurring": "每周重复（固定）",
+    "form.oneoff": "仅这一周（临时）",
+    "form.day": "星期",
+    "form.date": "具体日期",
+    "form.range": "有效期（可选。比如只上 4 周，就填第一次和最后一次的日期；留空 = 一直每周重复）",
+    "form.start": "开始时间",
+    "form.end": "结束时间",
+    "form.loc": "地点/备注（可选）",
+    "form.locPh": "如 MP 102，或说明",
+    "form.add": "＋ 添加到课表",
+    "add.noTimeTitle": "缺少时间",
+    "add.noTimeMsg": "请填写开始和结束时间。",
+    "add.badRangeTitle": "有效期不对",
+    "add.badRangeMsg": "结束日期不能早于开始日期。",
+    "add.noDateTitle": "缺少日期",
+    "add.noDateMsg": "请选择日期。",
+
+    "ev.type": "类型",
+    "ev.time": "时间",
+    "ev.loc": "地点/备注",
+    "ev.range": "，有效期 {from} ~ {to}",
+    "ev.timeVal": "{time}（{when}）",
+    "ev.whenRecurring": "{day}　每周重复{range}",
+    "ev.whenOneoff": "{date}　仅这一周",
+    "ev.deleteBtn": "删除此事项",
+    "ee.title": "编辑事项",
+    "ee.recurring": "每周重复",
+    "ee.oneoff": "仅这一周",
+    "ee.range": "有效期（可选，留空 = 一直每周重复）",
+    "ee.errName": "请填写课程/事项名称",
+    "err.times": "请填写开始和结束时间",
+    "err.range": "有效期的结束日期不能早于开始日期",
+    "err.date": "请选择日期",
+
+    "log.title": "{course}（已学习）",
+    "log.date": "日期",
+    "log.range": "时间段",
+    "log.rangeBreaks": "时间段（含暂停）",
+    "log.noClock": "未记录具体时间",
+    "log.breaks": "中间暂停",
+    "log.breaksVal": "{rows}（共 {total}，日历方块上用斜纹标出）",
+    "log.sep": "，",
+    "log.actual": "实际学习时长",
+    "log.note": "备注",
+    "log.editCourse": "编辑课程",
+    "log.delete": "删除这条记录",
+
+    "imp.failTitle": "导入失败",
+    "imp.failMsg": "不是合法的JSON文件：{err}",
+    "imp.doneTitle": "导入完成",
+    "imp.skipped": "（跳过 {n} 条已存在的）",
+    "imp.line1": "课程 {c} 条，课表事项新增 {e} 条{skip}。",
+    "imp.line2": "学习记录：新增 {a} 条，合并 {m} 条（同课程同日期时间段有重叠，取并集），跳过完全重复 {s} 条。",
+
+    "set.title": "⚙️ 设置",
+    "set.keyLabel": "Claude API Key（用于 AI 识别课表）",
+    "set.on": "已设置",
+    "set.off": "未设置",
+    "set.keyPh": "粘贴你的 key（以 sk-ant- 开头）",
+    "set.help1": "还没有 key？打开 <a href=\"https://console.anthropic.com/\" target=\"_blank\" rel=\"noopener noreferrer\">console.anthropic.com</a> 注册登录，在 API Keys 页面创建一个，再粘贴到上面。",
+    "set.help2": "这个 key 只保存在<b>这台电脑的这个浏览器</b>里，不会出现在导出的备份里。只有在你使用 AI 导入时，它才会随识别请求发给 Anthropic（不经过其他任何服务器），费用由你自己的 Anthropic 账号承担。请不要在公共电脑上保存 key。不想用 AI 的话可以不设置，手动添加课表和导入 JSON 照常可用。",
+    "set.clear": "清除 key",
+    "set.errEmpty": "请先粘贴 key",
+    "set.errPrefix": "这看起来不是 Anthropic 的 key（应该以 sk-ant- 开头），请检查是否复制完整",
+    "set.errSpace": "key 中间不应该有空格或换行，请重新复制",
+
+    "ai.title": "📷 AI 导入课表",
+    "ai.nokey.body": "这个功能需要你自己的 Claude API key（只保存在你的浏览器里）。先到设置里填一下，几分钟就能搞定；不想用 AI 的话，也可以手动添加课表或导入 JSON。",
+    "ai.nokey.go": "去设置",
+    "ai.in.intro": "上传课表截图或手写课表的照片，或直接粘贴文字，AI 会读出课程；你确认后才会真正加入课表。",
+    "ai.in.drop": "点这里选择图片，或直接按 Ctrl/⌘+V 粘贴截图（最多 {max} 张）",
+    "ai.in.textLabel": "文字 / 补充说明（可选）",
+    "ai.in.textPh": "可以粘贴课表文字，或补充说明，比如：这是 2026 秋季学期的课表；周三下午那个只有这一周有",
+    "ai.in.privacy": "图片和文字会发送给 Anthropic 的 API 做识别。上传前请先遮住不想发送的个人信息（学号、姓名等）。",
+    "ai.in.start": "开始识别",
+    "ai.in.remove": "移除",
+    "ai.run.title": "正在识别…",
+    "ai.run.body": "AI 正在读取课表，通常需要 10–40 秒，请不要关闭页面。",
+    "ai.noteLang": "Simplified Chinese",
+
+    "ai.err.notImage": "这不是图片文件，请选择 PNG / JPG 等图片。",
+    "ai.err.maxImages": "最多只能放 {max} 张图片，多的已忽略。",
+    "ai.err.cantRead": "无法读取「{name}」。如果是 HEIC 格式，请先转成 PNG / JPG，或者直接截图再上传。",
+    "ai.err.empty": "请先上传图片，或者粘贴一些课表文字。",
+    "ai.err.failed": "识别失败，请重试。",
+    "ai.err.aborted": "已取消识别。",
+    "ai.err.network": "连不上 Anthropic：请检查网络，或者是否有浏览器插件 / 防火墙拦截了 api.anthropic.com。",
+    "ai.err.tooMuch": "内容太多，一次识别不完。请把图片分几次上传（比如一次只传一周的课表）。",
+    "ai.err.format": "AI 返回的格式不对，没能读出课表。请重试一次，或换一张更清晰的图片。",
+    "ai.err.none": "没有识别到任何课程/事项。",
+    "ai.err.noneWhy": "（AI 的说明：{why}）",
+    "ai.err.noneHint": "请换一张更清晰的图片，或者补充一些文字。",
+    "ai.err.noneSep": "；",
+    "ai.http.401": "API key 无效或已被删除，请到「设置」里重新粘贴。",
+    "ai.http.403": "这个 key 没有权限使用该功能，请到 console.anthropic.com 检查 key 的权限。",
+    "ai.http.credit": "账户额度不足，请到 console.anthropic.com 的 Billing 页面充值后再试。",
+    "ai.http.404": "当前模型（{model}）不可用，可能你的账号还没有权限，或模型名称已更新。",
+    "ai.http.413": "上传的内容太大，请减少图片数量，或者换小一点的图片。",
+    "ai.http.429": "请求太频繁，或达到了账号的用量上限。请稍等一会儿再试。",
+    "ai.http.5xx": "Anthropic 服务暂时繁忙，请稍后再试。",
+    "ai.http.other": "识别失败（HTTP {status}）{msg}",
+    "ai.http.paren": "（{msg}）",
+    "ai.http.colon": "：{msg}",
+
+    "ai.rev.title": "确认识别结果",
+    "ai.rev.summary": "识别到 <b>{n}</b> 项{unsure}{dup}。可以直接修改，不要的取消勾选。",
+    "ai.rev.unsure": "，其中 <b style=\"color:#b26a00;\">{n} 项需要你确认是每周重复还是仅这一次</b>（黄色框）",
+    "ai.rev.dup": "；{n} 项课表里好像已经有了，默认没勾选",
+    "ai.rev.back": "返回重新识别",
+    "ai.rev.confirm": "确认导入（{n}）",
+    "ai.rev.fixAll": "有几项还没填完整，请看上面标出的提示。",
+    "ai.item.include": "导入",
+    "ai.item.dup": "课表里好像已有",
+    "ai.item.coursePh": "课程/事项名称",
+    "ai.item.choose": "❓ 请选择…",
+    "ai.item.weekly": "每周重复",
+    "ai.item.once": "仅这一次",
+    "ai.item.dayPh": "星期…",
+    "ai.item.locPh": "地点（可选）",
+    "ai.item.range": "有效期（可选，留空 = 一直每周重复）：",
+    "ai.item.startTitle": "第一次上课的日期",
+    "ai.item.endTitle": "最后一次的日期",
+    "ai.item.skip": "跳过 {dates}",
+    "ai.v.name": "请填写课程/事项名称",
+    "ai.v.choose": "请选择是「每周重复」还是「仅这一次」",
+    "ai.v.day": "请选择星期几",
+    "ai.v.date": "请选择具体日期",
+    "ai.v.range": "有效期的结束日期不能早于开始日期",
+    "ai.v.times": "请填写开始和结束时间",
+    "ai.v.order": "结束时间必须晚于开始时间",
+    "ai.done.title": "导入完成",
+    "ai.done.body": "已把 {n} 项加入课表。",
+    "ai.done.hint": "其中有答疑时间 / 其他活动，它们默认不显示，到课表页勾选对应的\"显示\"开关就能看到。"
+  };
+
+  TABLES.en = {
+    "app.title": "Study Timer",
+    "app.h1": "📚 Study Timer",
+    "db.init": "Initializing database…",
+    "db.ok": "Your data is stored in a local SQLite database (persisted by the browser's IndexedDB) and is not uploaded to any server. Only when you use AI import are the images/text you pick sent to Anthropic.",
+    "db.fail": "Database initialization failed: {err} (check that your network can reach cdn.jsdelivr.net to load sql.js)",
+
+    "common.ok": "OK",
+    "common.close": "Close",
+    "common.cancel": "Cancel",
+    "common.save": "Save",
+    "common.delete": "Delete",
+    "common.edit": "Edit",
+    "list.sep": ", ",
+
+    "tab.timer": "⏱ Timer",
+    "tab.cal": "📅 Schedule",
+    "settings.btn": "⚙️ Settings",
+
+    "course.newPh": "New course / item name, press Enter to add",
+    "course.add": "Add",
+    "course.manage": "🗑 Manage courses",
+
+    "timer.pickHint": "Pick a course, then press Start",
+    "timer.start": "▶ Start",
+    "timer.pause": "⏸ Pause",
+    "timer.resume": "▶ Resume",
+    "timer.stop": "⏹ Stop & save",
+    "timer.running": "Timing: {course}",
+    "timer.paused": "Paused: {course}",
+    "timer.noteLabel": "Note (optional, e.g. \"tidied my notes\")",
+    "timer.notePh": "Saved together with this record",
+
+    "rec.title": "Study records",
+    "rec.filterPh": "Filter by date, e.g. 2026-09",
+    "rec.clearFilter": "Clear filter",
+    "rec.trash": "🗑 Recently deleted",
+    "rec.exportCsv": "Export CSV",
+    "rec.empty": "No records yet. They are saved here automatically after you time a session.",
+    "rec.emptyFiltered": "No records match the current filter.",
+    "rec.dayTotal": "(total {total})",
+    "rec.colCourse": "Course",
+    "rec.colDuration": "Duration",
+    "rec.editTimeTitle": "Click to edit start/end time",
+    "rec.editCourseTitle": "Click to change the course / item",
+    "rec.editNote": "Edit note",
+    "rec.addNote": "+ Add note",
+    "csv.header": "Date,Start,End,Course,Duration (s),Duration (h:m:s),Note",
+
+    "mc.title": "Manage courses / items",
+    "mc.help": "Deleting only removes it from the drop-down list. Saved study records and schedule items are not affected.",
+    "mc.none": "No courses / items yet",
+    "mc.running": " (timing — can't delete)",
+
+    "trash.title": "🗑 Recently deleted",
+    "trash.help": "Anything deleted in the last 10 days is here and can be restored; after 10 days it is removed automatically.",
+    "trash.records": "Study records ({n})",
+    "trash.events": "Schedule items ({n})",
+    "trash.none": "None",
+    "trash.restore": "Restore",
+    "trash.purge": "Delete forever",
+
+    "note.title": "Edit note",
+    "note.info": "Course: {course}  {date}",
+    "ec.title": "Change course / item",
+    "ec.current": "Current: {course}  {date}  {dur}",
+    "ec.pick": "Choose an existing course / item",
+    "ec.new": "Or type a new name (if filled in, it is used instead)",
+    "ec.newPh": "New course / item name",
+    "et.title": "Edit start / end time",
+    "et.info": "Course: {course}  Current duration: {dur}",
+    "et.overnight": "The end time is the next day (crosses midnight)",
+    "et.help": "The duration is recalculated from the new start / end time when you save.",
+    "et.errStillNotLater": "The end time is still not after the start time. Please check.",
+    "et.errEarlier": "The end time is earlier than the start time. If this session crossed midnight, tick the option above.",
+    "et.errFuture": "Start / end time can't be in the future",
+
+    "cal.backupTitle": "Import / backup",
+    "cal.aiImport": "📷 AI import",
+    "cal.exportJson": "Export JSON backup",
+    "cal.importJson": "Import JSON backup",
+    "cal.backupHelp": "Export bundles your courses, schedule items and study records into one JSON file. Importing a file in the same format merges it in (existing data is not overwritten).",
+    "cal.prev": "← Previous week",
+    "cal.next": "Next week →",
+    "cal.thisWeek": " (this week)",
+    "cal.showOH": "Show office hours",
+    "cal.showActivity": "Show other activities (optional)",
+    "cal.showLog": "Show time studied",
+    "cal.expand": "Expand early-morning / late-night hours (0–8, 22–24)",
+    "cal.hint": "Double-click an event for details; double-click empty space to expand / collapse the early-morning and late-night hours",
+    "tag.oh": " · OH",
+    "tag.activity": " · Activity",
+    "tag.exam": " · ⚠️Exam",
+    "tag.log": " · Studied",
+    "stripe.title": "Paused",
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+
+    "form.title": "Add a course / item to the schedule",
+    "form.course": "Course / item",
+    "form.newCoursePh": "or type a new name",
+    "form.type": "Type",
+    "kind.class": "Class / fixed commitment",
+    "kind.officehour": "Office hours",
+    "kind.activity": "Other activity (optional)",
+    "kind.exam": "Exam / test",
+    "form.recurring": "Repeats weekly (fixed)",
+    "form.oneoff": "This week only (one-off)",
+    "form.day": "Day of week",
+    "form.date": "Date",
+    "form.range": "Valid period (optional. For a 4-week series, enter the first and last dates; leave blank = repeats every week)",
+    "form.start": "Start time",
+    "form.end": "End time",
+    "form.loc": "Location / note (optional)",
+    "form.locPh": "e.g. MP 102, or a short note",
+    "form.add": "+ Add to schedule",
+    "add.noTimeTitle": "Missing time",
+    "add.noTimeMsg": "Please enter a start and end time.",
+    "add.badRangeTitle": "Invalid period",
+    "add.badRangeMsg": "The end date can't be before the start date.",
+    "add.noDateTitle": "Missing date",
+    "add.noDateMsg": "Please choose a date.",
+
+    "ev.type": "Type",
+    "ev.time": "Time",
+    "ev.loc": "Location / note",
+    "ev.range": ", valid {from} ~ {to}",
+    "ev.timeVal": "{time} ({when})",
+    "ev.whenRecurring": "{day}  repeats weekly{range}",
+    "ev.whenOneoff": "{date}  this week only",
+    "ev.deleteBtn": "Delete this item",
+    "ee.title": "Edit item",
+    "ee.recurring": "Repeats weekly",
+    "ee.oneoff": "This week only",
+    "ee.range": "Valid period (optional, blank = repeats every week)",
+    "ee.errName": "Please enter a course / item name",
+    "err.times": "Please enter a start and end time",
+    "err.range": "The end date of the valid period can't be before the start date",
+    "err.date": "Please choose a date",
+
+    "log.title": "{course} (studied)",
+    "log.date": "Date",
+    "log.range": "Time range",
+    "log.rangeBreaks": "Time range (includes pauses)",
+    "log.noClock": "Exact time not recorded",
+    "log.breaks": "Paused",
+    "log.breaksVal": "{rows} (total {total}, shown as stripes on the calendar block)",
+    "log.sep": ", ",
+    "log.actual": "Actual study time",
+    "log.note": "Note",
+    "log.editCourse": "Edit course",
+    "log.delete": "Delete this record",
+
+    "imp.failTitle": "Import failed",
+    "imp.failMsg": "Not a valid JSON file: {err}",
+    "imp.doneTitle": "Import complete",
+    "imp.skipped": " ({n} already existing, skipped)",
+    "imp.line1": "Courses: {c}. Schedule items added: {e}{skip}.",
+    "imp.line2": "Study records: {a} added, {m} merged (same course and date with overlapping times are combined), {s} exact duplicates skipped.",
+
+    "set.title": "⚙️ Settings",
+    "set.keyLabel": "Claude API key (used for AI schedule import)",
+    "set.on": "Set",
+    "set.off": "Not set",
+    "set.keyPh": "Paste your key (starts with sk-ant-)",
+    "set.help1": "No key yet? Go to <a href=\"https://console.anthropic.com/\" target=\"_blank\" rel=\"noopener noreferrer\">console.anthropic.com</a>, sign up, create one on the API Keys page, then paste it above.",
+    "set.help2": "This key is stored only in <b>this browser on this computer</b> and never appears in exported backups. It is sent to Anthropic only with an AI import request (never through any other server), and the cost is charged to your own Anthropic account. Please don't save a key on a shared computer. If you don't want to use AI, leave it blank — adding schedule items by hand and importing JSON still work.",
+    "set.clear": "Clear key",
+    "set.errEmpty": "Please paste a key first",
+    "set.errPrefix": "This doesn't look like an Anthropic key (it should start with sk-ant-). Please check that you copied all of it.",
+    "set.errSpace": "A key shouldn't contain spaces or line breaks. Please copy it again.",
+
+    "ai.title": "📷 AI schedule import",
+    "ai.nokey.body": "This feature needs your own Claude API key (stored only in your browser). Add it in Settings first — it takes a few minutes. If you'd rather not use AI, you can add schedule items by hand or import JSON.",
+    "ai.nokey.go": "Go to Settings",
+    "ai.in.intro": "Upload a screenshot or a photo of a handwritten timetable, or just paste text. AI reads out the courses, and nothing is added to your schedule until you confirm.",
+    "ai.in.drop": "Click to choose images, or press Ctrl/⌘+V to paste a screenshot (up to {max})",
+    "ai.in.textLabel": "Text / extra notes (optional)",
+    "ai.in.textPh": "Paste timetable text, or add notes, e.g. \"This is my Fall 2026 timetable; the Wednesday afternoon one is this week only\"",
+    "ai.in.privacy": "Images and text are sent to Anthropic's API for recognition. Please cover any personal information (student number, name, etc.) before uploading.",
+    "ai.in.start": "Start recognition",
+    "ai.in.remove": "Remove",
+    "ai.run.title": "Recognizing…",
+    "ai.run.body": "AI is reading your timetable. This usually takes 10–40 seconds — please don't close the page.",
+    "ai.noteLang": "English",
+
+    "ai.err.notImage": "That isn't an image file. Please choose a PNG / JPG or similar.",
+    "ai.err.maxImages": "You can add at most {max} images; the extra ones were ignored.",
+    "ai.err.cantRead": "Couldn't read \"{name}\". If it's a HEIC file, please convert it to PNG / JPG first, or take a screenshot and upload that.",
+    "ai.err.empty": "Please upload an image first, or paste some timetable text.",
+    "ai.err.failed": "Recognition failed. Please try again.",
+    "ai.err.aborted": "Recognition cancelled.",
+    "ai.err.network": "Can't reach Anthropic. Please check your network, or whether a browser extension / firewall is blocking api.anthropic.com.",
+    "ai.err.tooMuch": "There is too much content for one request. Please upload the images in several batches (for example one week's timetable at a time).",
+    "ai.err.format": "The AI's reply was in the wrong format and the timetable couldn't be read. Please try again, or use a clearer image.",
+    "ai.err.none": "No courses / items were found.",
+    "ai.err.noneWhy": "(AI's explanation: {why})",
+    "ai.err.noneHint": "Please try a clearer image, or add some text.",
+    "ai.err.noneSep": "; ",
+    "ai.http.401": "The API key is invalid or has been deleted. Please paste it again in Settings.",
+    "ai.http.403": "This key isn't allowed to use this feature. Please check the key's permissions at console.anthropic.com.",
+    "ai.http.credit": "Your account balance is too low. Please add credit on the Billing page at console.anthropic.com and try again.",
+    "ai.http.404": "The model ({model}) is not available. Your account may not have access yet, or the model name may have changed.",
+    "ai.http.413": "The upload is too large. Please use fewer images, or smaller ones.",
+    "ai.http.429": "Too many requests, or your account's usage limit was reached. Please wait a moment and try again.",
+    "ai.http.5xx": "The Anthropic service is busy. Please try again later.",
+    "ai.http.other": "Recognition failed (HTTP {status}){msg}",
+    "ai.http.paren": " ({msg})",
+    "ai.http.colon": ": {msg}",
+
+    "ai.rev.title": "Review the results",
+    "ai.rev.summary": "Found <b>{n}</b> item(s){unsure}{dup}. You can edit anything; untick what you don't want.",
+    "ai.rev.unsure": ", of which <b style=\"color:#b26a00;\">{n} need you to choose weekly or one-off</b> (yellow boxes)",
+    "ai.rev.dup": "; {n} look like they're already in your schedule and are unticked",
+    "ai.rev.back": "Back to re-recognize",
+    "ai.rev.confirm": "Confirm import ({n})",
+    "ai.rev.fixAll": "Some items aren't complete yet. See the notes above.",
+    "ai.item.include": "Import",
+    "ai.item.dup": "Looks like it's already in your schedule",
+    "ai.item.coursePh": "Course / item name",
+    "ai.item.choose": "❓ Choose…",
+    "ai.item.weekly": "Repeats weekly",
+    "ai.item.once": "One time only",
+    "ai.item.dayPh": "Day…",
+    "ai.item.locPh": "Location (optional)",
+    "ai.item.range": "Valid period (optional, blank = repeats every week):",
+    "ai.item.startTitle": "Date of the first session",
+    "ai.item.endTitle": "Date of the last session",
+    "ai.item.skip": "Skips {dates}",
+    "ai.v.name": "Please enter a course / item name",
+    "ai.v.choose": "Please choose \"Repeats weekly\" or \"One time only\"",
+    "ai.v.day": "Please choose a day of the week",
+    "ai.v.date": "Please choose a date",
+    "ai.v.range": "The end date of the valid period can't be before the start date",
+    "ai.v.times": "Please enter a start and end time",
+    "ai.v.order": "The end time must be after the start time",
+    "ai.done.title": "Import complete",
+    "ai.done.body": "{n} item(s) added to your schedule.",
+    "ai.done.hint": "Some of them are office hours / other activities, which are hidden by default. Tick the matching \"Show\" switch on the Schedule tab to see them."
+  };
+
+  /* ---------------- engine ---------------- */
+  function storedLang() {
+    try { return localStorage.getItem(LANG_KEY); } catch (e) { return null; }
+  }
+  function availableLangs() {
+    return ["orig", "zh", "en"].filter(l => TABLES[l]);
+  }
+  function pickLang() {
+    const saved = storedLang();
+    if (saved && TABLES[saved]) return saved;
+    if (TABLES.orig) return "orig";
+    return /^en/i.test(navigator.language || "") ? "en" : "zh";
+  }
+  const lang = pickLang();
+  window.I18N_LANG = lang;
+  window.I18N_LANG_NAMES = { orig: "原版", zh: "中文", en: "English" };
+  window.I18N_AVAILABLE = availableLangs();
+
+  function lookup(key) {
+    const own = TABLES[lang] && TABLES[lang][key];
+    if (own !== undefined) return own;
+    // "orig" only overrides a handful of keys; everything else is the Chinese text.
+    if (lang === "orig" && TABLES.zh[key] !== undefined) return TABLES.zh[key];
+    return undefined;
+  }
+  window.t = function t(key, params) {
+    const v = lookup(key);
+    if (v === undefined) return key;          // missing key: show it, so it's noticed
+    if (typeof v !== "string" || !params) return v;
+    return v.replace(/\{(\w+)\}/g, (m, name) => (params[name] !== undefined ? params[name] : m));
+  };
+
+  window.setLang = function setLang(l) {
+    window.skipUnloadWarning = true;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) { /* ignore */ }
+    location.reload();
+  };
+
+  // Fill in the static HTML.
+  window.applyI18n = function applyI18n(root) {
+    root = root || document;
+    root.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    root.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+    root.querySelectorAll("[data-i18n-ph]").forEach(el => { el.setAttribute("placeholder", t(el.dataset.i18nPh)); });
+    root.querySelectorAll("[data-i18n-title]").forEach(el => { el.setAttribute("title", t(el.dataset.i18nTitle)); });
+    root.querySelectorAll("[data-i18n-day]").forEach(el => { el.textContent = t("days")[Number(el.dataset.i18nDay)]; });
+    document.title = t("app.title");
+    document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
+  };
+
+  window.applyI18n();   // this script sits at the end of <body>, so the static HTML already exists
+})();

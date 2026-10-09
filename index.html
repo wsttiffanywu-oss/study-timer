@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>课程时间管理</title>
+<title>Study Timer</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,13 +11,14 @@
   <div class="modal-card" id="modalCard"></div>
 </div>
 <div class="app">
-  <h1>📚 课程时间管理</h1>
-  <div class="db-status" id="dbStatus">正在初始化数据库…</div>
+  <h1 data-i18n="app.h1"></h1>
+  <div class="db-status" id="dbStatus" data-i18n="db.init"></div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="timerTab">⏱ 计时器</button>
-    <button class="tab-btn" data-tab="calTab">📅 课表</button>
-    <button class="btn-outline small" id="settingsBtn" style="margin-left:auto; align-self:center;">⚙️ 设置</button>
+    <button class="tab-btn active" data-tab="timerTab" data-i18n="tab.timer"></button>
+    <button class="tab-btn" data-tab="calTab" data-i18n="tab.cal"></button>
+    <select id="langSelect" class="lang-select" aria-label="Language" style="margin-left:auto;"></select>
+    <button class="btn-outline small" id="settingsBtn" style="align-self:center;" data-i18n="settings.btn"></button>
   </div>
 
   <!-- ============ TIMER TAB ============ -->
@@ -25,32 +26,32 @@
     <div class="card">
       <div class="row">
         <select id="courseSelect"></select>
-        <input type="text" id="newCourseInput" placeholder="新建课程/事项名称，回车添加">
-        <button class="btn-outline small" id="addCourseBtn">添加</button>
-        <button class="btn-outline small" id="manageCourseBtn">🗑 管理课程</button>
+        <input type="text" id="newCourseInput" data-i18n-ph="course.newPh">
+        <button class="btn-outline small" id="addCourseBtn" data-i18n="course.add"></button>
+        <button class="btn-outline small" id="manageCourseBtn" data-i18n="course.manage"></button>
       </div>
 
       <div class="timer-display" id="timerDisplay">00:00:00</div>
-      <div class="status" id="statusText">选择课程后点击开始</div>
+      <div class="status" id="statusText" data-i18n="timer.pickHint"></div>
 
       <div class="row actions">
-        <button class="btn-primary" id="startBtn">▶ 开始</button>
-        <button class="btn-outline" id="pauseBtn" disabled>⏸ 暂停</button>
-        <button class="btn-danger" id="stopBtn" disabled>⏹ 结束并保存</button>
+        <button class="btn-primary" id="startBtn" data-i18n="timer.start"></button>
+        <button class="btn-outline" id="pauseBtn" disabled data-i18n="timer.pause"></button>
+        <button class="btn-danger" id="stopBtn" disabled data-i18n="timer.stop"></button>
       </div>
 
-      <div class="note-label">备注（可选，比如"整理了笔记"）</div>
-      <textarea id="noteInput" placeholder="保存这条记录时会一起存下来"></textarea>
+      <div class="note-label" data-i18n="timer.noteLabel"></div>
+      <textarea id="noteInput" data-i18n-ph="timer.notePh"></textarea>
     </div>
 
     <div class="card">
       <div class="row toolbar">
-        <div class="summary-title">学习记录</div>
+        <div class="summary-title" data-i18n="rec.title"></div>
         <div class="row">
-          <input type="text" id="filterDate" placeholder="筛选日期 如 2026-09" style="min-width:170px;">
-          <button class="btn-outline small" id="clearFilterBtn">清除筛选</button>
-          <button class="btn-outline small" id="trashBtn">🗑 最近删除</button>
-          <button class="btn-outline small" id="exportBtn">导出CSV</button>
+          <input type="text" id="filterDate" data-i18n-ph="rec.filterPh" style="min-width:170px;">
+          <button class="btn-outline small" id="clearFilterBtn" data-i18n="rec.clearFilter"></button>
+          <button class="btn-outline small" id="trashBtn" data-i18n="rec.trash"></button>
+          <button class="btn-outline small" id="exportBtn" data-i18n="rec.exportCsv"></button>
         </div>
       </div>
       <div id="recordsContainer"></div>
@@ -61,29 +62,29 @@
   <div class="tab-panel" id="calTab">
     <div class="card">
       <div class="row toolbar">
-        <div class="summary-title">导入 / 备份</div>
+        <div class="summary-title" data-i18n="cal.backupTitle"></div>
         <div class="row">
-          <button class="btn-primary small" id="aiImportBtn">📷 AI导入课表</button>
-          <button class="btn-outline small" id="exportBackupBtn">导出JSON备份</button>
-          <button class="btn-outline small" id="importBackupBtn">导入JSON备份</button>
+          <button class="btn-primary small" id="aiImportBtn" data-i18n="cal.aiImport"></button>
+          <button class="btn-outline small" id="exportBackupBtn" data-i18n="cal.exportJson"></button>
+          <button class="btn-outline small" id="importBackupBtn" data-i18n="cal.importJson"></button>
           <input type="file" id="importBackupInput" accept="application/json" style="display:none;">
         </div>
       </div>
-      <div class="empty" style="padding:0;">导出会把课程、课表事项、学习记录打包成一个JSON文件；导入时选同样格式的文件即可合并进来（不会覆盖已有数据）。</div>
+      <div class="empty" style="padding:0;" data-i18n="cal.backupHelp"></div>
     </div>
 
     <div class="card">
       <div class="row week-nav">
-        <button class="btn-outline small" id="prevWeekBtn">← 上一周</button>
+        <button class="btn-outline small" id="prevWeekBtn" data-i18n="cal.prev"></button>
         <div class="week-label" id="weekLabel"></div>
-        <button class="btn-outline small" id="nextWeekBtn">下一周 →</button>
+        <button class="btn-outline small" id="nextWeekBtn" data-i18n="cal.next"></button>
       </div>
       <div class="row toggle-row">
-        <label><input type="checkbox" id="toggleOH"> 显示 Office Hour</label>
-        <label><input type="checkbox" id="toggleActivity"> 显示其他活动（可选参加）</label>
-        <label><input type="checkbox" id="toggleLog"> 显示已学习时间</label>
-        <label><input type="checkbox" id="toggleExpand"> 展开凌晨/深夜时段（0-8点、22-24点）</label>
-        <span style="color:var(--muted); font-size:12px;">双击事件块看详情；双击空白处可展开/收起凌晨深夜时段</span>
+        <label><input type="checkbox" id="toggleOH"> <span data-i18n="cal.showOH"></span></label>
+        <label><input type="checkbox" id="toggleActivity"> <span data-i18n="cal.showActivity"></span></label>
+        <label><input type="checkbox" id="toggleLog"> <span data-i18n="cal.showLog"></span></label>
+        <label><input type="checkbox" id="toggleExpand"> <span data-i18n="cal.expand"></span></label>
+        <span style="color:var(--muted); font-size:12px;" data-i18n="cal.hint"></span>
       </div>
       <div class="cal-scroll" id="calScrollContainer">
         <div class="cal-header-row" id="calHeaderRow"></div>
@@ -95,46 +96,46 @@
     </div>
 
     <div class="card">
-      <div class="summary-title" style="margin-bottom:10px;">添加课程/事项到课表</div>
+      <div class="summary-title" style="margin-bottom:10px;" data-i18n="form.title"></div>
       <div class="form-grid">
         <div class="full">
-          <label class="form-label">课程/事项</label>
+          <label class="form-label" data-i18n="form.course"></label>
           <div class="row" style="gap:8px;">
             <select id="evCourseSelect"></select>
-            <input type="text" id="evNewCourseInput" placeholder="或输入新的名称">
+            <input type="text" id="evNewCourseInput" data-i18n-ph="form.newCoursePh">
           </div>
         </div>
         <div class="full">
-          <label class="form-label">类型</label>
+          <label class="form-label" data-i18n="form.type"></label>
           <select id="evKindSelect">
-            <option value="class">课程 / 固定安排</option>
-            <option value="officehour">Office Hour</option>
-            <option value="activity">其他活动（可选参加）</option>
-            <option value="exam">考试 / 测验</option>
+            <option value="class" data-i18n="kind.class"></option>
+            <option value="officehour" data-i18n="kind.officehour"></option>
+            <option value="activity" data-i18n="kind.activity"></option>
+            <option value="exam" data-i18n="kind.exam"></option>
           </select>
         </div>
         <div class="full radio-row">
-          <label><input type="radio" name="evType" value="recurring" checked> 每周重复（固定）</label>
-          <label><input type="radio" name="evType" value="oneoff"> 仅这一周（临时）</label>
+          <label><input type="radio" name="evType" value="recurring" checked> <span data-i18n="form.recurring"></span></label>
+          <label><input type="radio" name="evType" value="oneoff"> <span data-i18n="form.oneoff"></span></label>
         </div>
         <div id="evDayWrap">
-          <label class="form-label">星期</label>
+          <label class="form-label" data-i18n="form.day"></label>
           <select id="evDaySelect">
-            <option value="0">周一</option>
-            <option value="1">周二</option>
-            <option value="2">周三</option>
-            <option value="3">周四</option>
-            <option value="4">周五</option>
-            <option value="5">周六</option>
-            <option value="6">周日</option>
+            <option value="0" data-i18n-day="0"></option>
+            <option value="1" data-i18n-day="1"></option>
+            <option value="2" data-i18n-day="2"></option>
+            <option value="3" data-i18n-day="3"></option>
+            <option value="4" data-i18n-day="4"></option>
+            <option value="5" data-i18n-day="5"></option>
+            <option value="6" data-i18n-day="6"></option>
           </select>
         </div>
         <div id="evDateWrap" style="display:none;">
-          <label class="form-label">具体日期</label>
+          <label class="form-label" data-i18n="form.date"></label>
           <input type="date" id="evDateInput" style="width:100%;">
         </div>
         <div class="full" id="evRangeWrap">
-          <label class="form-label">有效期（可选。比如只上 4 周，就填第一次和最后一次的日期；留空 = 一直每周重复）</label>
+          <label class="form-label" data-i18n="form.range"></label>
           <div class="row" style="gap:8px; flex-wrap:nowrap;">
             <input type="date" id="evStartDateInput" style="flex:1; min-width:0;">
             <span style="color:var(--muted);">~</span>
@@ -142,25 +143,28 @@
           </div>
         </div>
         <div>
-          <label class="form-label">开始时间</label>
+          <label class="form-label" data-i18n="form.start"></label>
           <input type="time" id="evStartInput" style="width:100%;">
         </div>
         <div>
-          <label class="form-label">结束时间</label>
+          <label class="form-label" data-i18n="form.end"></label>
           <input type="time" id="evEndInput" style="width:100%;">
         </div>
         <div class="full">
-          <label class="form-label">地点/备注（可选）</label>
-          <input type="text" id="evLocInput" style="width:100%;" placeholder="如 MP 102，或说明">
+          <label class="form-label" data-i18n="form.loc"></label>
+          <input type="text" id="evLocInput" style="width:100%;" data-i18n-ph="form.locPh">
         </div>
       </div>
-      <button class="btn-primary" id="addEventBtn">＋ 添加到课表</button>
+      <button class="btn-primary" id="addEventBtn" data-i18n="form.add"></button>
     </div>
   </div>
 </div>
 
 <!-- sql.js: SQLite compiled to WebAssembly, runs entirely in the browser -->
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/sql-wasm.js"></script>
+<!-- optional, kept out of the repository (see .gitignore): the "原版" wording overlay. The app works without it. -->
+<script src="i18n-orig.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 <script src="ai-import.js"></script>
 </body>
