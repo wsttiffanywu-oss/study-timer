@@ -36,6 +36,7 @@ Rules:
 - kind: "class" for lectures, tutorials, labs and other fixed course meetings; "officehour" for office hours; "exam" for exams, tests, quizzes and midterms; "activity" for optional events, workshops, info sessions, clubs and anything else.
 - recurrence: "weekly" if the source shows it repeating every week (a weekly grid with day columns and no dates, "Every Monday", "Tuesdays and Thursdays"); "once" if it happens on one specific date; "unsure" if you cannot tell. Never guess. If a time is given without a clear repetition and without a date, use "unsure".
 - Weekly events: set day (0 = Monday ... 6 = Sunday). If the source states a start date, end date or skipped dates for the series (for example a term range or a holiday), fill startDate, endDate and excludeDates (YYYY-MM-DD).
+- Limited series: if a weekly event lasts only a fixed number of weeks (for example "4 weeks, every Tuesday", "Weeks 3-6"), set recurrence "weekly", fill weeks with that count, and fill startDate only if the source gives or clearly implies the first date. Never compute endDate yourself and never invent a start date; if the first date is unknown, leave startDate out and say in note that the user must pick the start date.
 - One-off events: set date as YYYY-MM-DD. If the year is missing, use the nearest upcoming occurrence relative to today's date given in the user message. If the date is missing, leave it out and use recurrence "unsure".
 - start and end: 24-hour "HH:MM". If the end time is not given, leave end out and explain in note.
 - loc: building and room as printed; leave it out if not shown.
@@ -65,6 +66,7 @@ const AI_EVENTS_TOOL = {
             startDate: { type: "string", description: "YYYY-MM-DD, first day of a weekly series" },
             endDate: { type: "string", description: "YYYY-MM-DD, last day of a weekly series" },
             excludeDates: { type: "array", items: { type: "string" }, description: "YYYY-MM-DD dates the weekly series skips" },
+            weeks: { type: "integer", minimum: 2, maximum: 52, description: "Total number of consecutive weekly sessions, only when the series is limited to a fixed number of weeks" },
             note: { type: "string", description: "Short Chinese note for anything the user should double-check" }
           },
           required: ["course", "kind", "recurrence", "start"]
@@ -326,6 +328,19 @@ function normalizeAiTime(t) {
 function normalizeAiDate(d) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(d || "")) ? String(d) : "";
 }
+function aiFmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function aiAddDays(dateStr, n) {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return aiFmtDate(d);
+}
+// First date on or after dateStr that falls on weekday `day` (0 = Monday).
+function aiNextWeekday(dateStr, day) {
+  const cur = (new Date(dateStr + "T00:00:00").getDay() + 6) % 7;
+  return aiAddDays(dateStr, (day - cur + 7) % 7);
+}
 function normalizeAiEvent(raw) {
   if (!raw || typeof raw !== "object") return null;
   const course = String(raw.course || "").trim();
@@ -339,14 +354,21 @@ function normalizeAiEvent(raw) {
   if (recurrence === "weekly" && day === null) recurrence = "unsure";
   if (recurrence === "once" && !date) recurrence = "unsure";
   const excludeDates = Array.isArray(raw.excludeDates) ? raw.excludeDates.map(normalizeAiDate).filter(Boolean) : [];
+  let startDate = normalizeAiDate(raw.startDate);
+  let endDate = normalizeAiDate(raw.endDate);
+  // "N consecutive weeks": the model reports the count, the code does the date maths.
+  const weeks = Number.isInteger(raw.weeks) && raw.weeks >= 2 && raw.weeks <= 52 ? raw.weeks : null;
+  if (recurrence === "weekly" && weeks && startDate && !endDate) {
+    startDate = aiNextWeekday(startDate, day);
+    endDate = aiAddDays(startDate, 7 * (weeks - 1));
+  }
   return {
     include: true,
     course, kind, recurrence, day, date,
     start: normalizeAiTime(raw.start),
     end: normalizeAiTime(raw.end),
     loc: String(raw.loc || "").trim(),
-    startDate: normalizeAiDate(raw.startDate),
-    endDate: normalizeAiDate(raw.endDate),
+    startDate, endDate, weeks,
     excludeDates,
     note: String(raw.note || "").trim(),
     duplicate: false
@@ -408,9 +430,7 @@ function aiItemHtml(it, i) {
     .map(([v, l]) => `<option value="${v}" ${it.recurrence === v ? "selected" : ""}>${l}</option>`).join("");
   const dayOpts = `<option value="">星期…</option>` +
     DAY_NAMES.map((n, d) => `<option value="${d}" ${it.day === d ? "selected" : ""}>${n}</option>`).join("");
-  const range = it.startDate || it.endDate
-    ? `有效期 ${it.startDate || "…"} ~ ${it.endDate || "…"}${it.excludeDates.length ? `（跳过 ${it.excludeDates.join("、")}）` : ""}`
-    : (it.excludeDates.length ? `跳过 ${it.excludeDates.join("、")}` : "");
+  const skip = it.excludeDates.length ? `跳过 ${it.excludeDates.join("、")}` : "";
   return `
     <div class="ai-item${it.recurrence === "unsure" ? " unsure" : ""}${it.duplicate ? " dup" : ""}" data-idx="${i}">
       <div class="ai-item-top">
@@ -427,7 +447,13 @@ function aiItemHtml(it, i) {
         <input type="time" data-f="end" value="${escapeAttr(it.end)}">
         <input type="text" data-f="loc" value="${escapeAttr(it.loc)}" placeholder="地点（可选）" class="ai-loc">
       </div>
-      ${range ? `<div class="ai-note">${escapeHtml(range)}</div>` : ""}
+      <div class="ai-range ai-when-weekly" style="display:${it.recurrence === "weekly" ? "flex" : "none"};">
+        <span>有效期（可选，留空 = 一直每周重复）：</span>
+        <input type="date" data-f="startDate" value="${escapeAttr(it.startDate)}" title="第一次上课的日期">
+        <span>~</span>
+        <input type="date" data-f="endDate" value="${escapeAttr(it.endDate)}" title="最后一次的日期">
+      </div>
+      ${skip ? `<div class="ai-note">${escapeHtml(skip)}</div>` : ""}
       ${it.note ? `<div class="ai-note">💬 ${escapeHtml(it.note)}</div>` : ""}
       <div class="ai-item-error" style="display:none;"></div>
     </div>`;
@@ -443,7 +469,9 @@ function onAiItemEdit(e) {
   else it[f] = e.target.value;
 
   if (f === "recurrence") {
-    row.querySelector(".ai-when-weekly").style.display = it.recurrence === "weekly" ? "block" : "none";
+    row.querySelectorAll(".ai-when-weekly").forEach(el => {
+      el.style.display = it.recurrence === "weekly" ? (el.classList.contains("ai-range") ? "flex" : "block") : "none";
+    });
     row.querySelector(".ai-when-once").style.display = it.recurrence === "once" ? "block" : "none";
     row.classList.toggle("unsure", it.recurrence === "unsure");
   }
@@ -465,6 +493,7 @@ function validateAiItem(it) {
   if (it.recurrence === "unsure") return "请选择是「每周重复」还是「仅这一次」";
   if (it.recurrence === "weekly" && it.day === null) return "请选择星期几";
   if (it.recurrence === "once" && !it.date) return "请选择具体日期";
+  if (it.recurrence === "weekly" && it.startDate && it.endDate && it.endDate < it.startDate) return "有效期的结束日期不能早于开始日期";
   if (!it.start || !it.end) return "请填写开始和结束时间";
   if (it.end <= it.start) return "结束时间必须晚于开始时间";
   return "";
